@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="欢迎来到我的博客！这是我的第一篇文章。">
+    <title>Hello World - 博客的第一篇文章 | MyBlog</title>
+
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✨</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-content">
+            <a href="/" class="nav-logo">✨ MyBlog</a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="/" class="nav-link">首页</a></li>
+                <li><a href="/#posts" class="nav-link">文章</a></li>
+                <li><a href="/#about" class="nav-link">关于</a></li>
+                <li><a href="/#contact" class="nav-link">联系</a></li>
+            </ul>
+            <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Article -->
+    <article class="article">
+        <div class="container">
+            <header class="article-header">
+                <div class="article-meta">
+                    <span class="post-tag">入门</span>
+                    <span>2024 年 1 月 21 日</span>
+                    <span>3 分钟阅读</span>
+                </div>
+                <h1 class="article-title">Hello World - 博客的第一篇文章</h1>
+                <p class="hero-description">欢迎来到我的博客！这是一个全新的开始。</p>
+            </header>
+
+            <div class="article-content">
+                <h2>👋 你好，世界！</h2>
+                <p>
+                    欢迎来到我的博客！这是我正式开始写博客的第一天，也是记录我技术成长历程的起点。
+                    在这里，我会分享我在编程、技术探索以及日常生活中的各种思考和心得。
+                </p>
+
+                <h2>为什么要写博客？</h2>
+                <p>
+                    我一直相信，写作是最好的学习方式之一。当你尝试把学到的知识用文字表达出来时，
+                    你会发现哪些地方理解得还不够深入，哪些概念还需要进一步探索。
+                </p>
+                <p>
+                    写博客还有一个好处：它可以帮助他人。也许某一天，一个和我遇到类似问题的人，
+                    会通过搜索引擎找到我的文章，从中获得一些启发或帮助。
+                </p>
+
+                <h2>这个博客会写什么？</h2>
+                <p>我计划在这个博客中分享以下内容：</p>
+                <ul>
+                    <li><strong>技术教程</strong> - 从入门到进阶的编程技巧</li>
+                    <li><strong>项目实践</strong> - 记录我做过的项目和遇到的坑</li>
+                    <li><strong>工具推荐</strong> - 分享提高效率的好工具</li>
+                    <li><strong>生活感悟</strong> - 偶尔也会写一些非技术的内容</li>
+                </ul>
+
+                <h2>技术栈</h2>
+                <p>
+                    这个博客使用了纯静态技术栈搭建，包括 HTML、CSS 和 JavaScript，
+                    没有使用任何框架。它部署在 <a href="https://pages.cloudflare.com" target="_blank">Cloudflare Pages</a> 上，
+                    拥有全球 CDN 加速和免费的 HTTPS 证书。
+                </p>
+
+                <blockquote>
+                    "The journey of a thousand miles begins with a single step." — 老子
+                </blockquote>
+
+                <h2>下一步</h2>
+                <p>
+                    接下来，我会继续完善这个博客，添加更多功能，比如评论系统、搜索功能、RSS 订阅等。
+                    同时也会开始写一些真正有价值的技术文章。
+                </p>
+                <p>
+                    感谢你的阅读！如果你对任何话题感兴趣，欢迎通过 GitHub 或 Twitter 联系我。
+                </p>
+            </div>
+        </div>
+    </article>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <a href="/" class="footer-logo">✨ MyBlog</a>
+            <p class="footer-copyright">
+                © 2024 MyBlog. 使用 ❤️ 构建
+            </p>
+        </div>
+    </footer>
+
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 4l-8 8h5v8h6v-8h5z" />
+        </svg>
+    </button>
+
+    <script src="../script.js"></script>
+</body>
+
+</html>

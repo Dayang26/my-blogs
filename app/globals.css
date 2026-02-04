@@ -30,3 +30,17 @@ body {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
+
+.sprite {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+@keyframes sprite-x {
+  from {
+    background-position-x: 0px;
+  }
+  to {
+    background-position-x: calc(-1 * var(--sprite-sheet-w));
+  }
+}

@@ -66,9 +66,15 @@ export default function Home() {
       />
 
       <div className="relative z-10 min-h-screen">
-        <div className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-end">
-          <div className="sprite origin-bottom-right scale-[0.3]" style={spriteStyle('/fire_new.png', fireSprite)} />
-          <div className="sprite origin-bottom-left scale-[0.3]" style={spriteStyle('/rw.png', RWSprite)} />
+        <div className="absolute bottom-6 left-1/2 h-[1px] w-[1px]">
+          <div
+            className="sprite absolute bottom-15 left-1/2 origin-bottom-left -translate-x-[100px] scale-[0.3]"
+            style={spriteStyle('/rw.png', RWSprite)}
+          />
+          <div
+            className="sprite absolute bottom-0 left-1/2 origin-bottom-right translate-x-[-150px] scale-[0.3]"
+            style={spriteStyle('/fire_new.png', fireSprite)}
+          />
         </div>
 
         <div className="absolute right-8 top-1/2 flex -translate-y-1/2 flex-col gap-4">

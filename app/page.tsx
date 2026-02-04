@@ -1,64 +1,67 @@
-import Image from "next/image";
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute left-[-120px] top-[-80px] h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute bottom-[-120px] right-[-120px] h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
+      </div>
+
+      <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 py-20">
+        <header className="flex flex-col gap-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-cyan-200">
+            Gesture Physics Lab
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
+              HandTrack 3D
+            </h1>
+            <p className="max-w-2xl text-base text-slate-300 md:text-lg">
+              使用普通摄像头实时识别手势，在 3D 物理世界里完成抓取、拖动与抛掷。
+              专注于手势稳定性与交互反馈，适合展示与原型验证。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/hand-3d"
+              className="rounded-lg bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              Launch Demo
+            </Link>
+          </div>
+        </header>
+
+        <section className="grid gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
+            <div className="text-sm font-semibold text-slate-100">核心能力</div>
+            <ul className="mt-4 space-y-2 text-sm text-slate-300">
+              <li>MediaPipe Hands 实时 21 关节点追踪</li>
+              <li>React Three Fiber + Rapier 物理交互</li>
+              <li>左右手识别、平滑滤波、置信度门限</li>
+              <li>可视化 Debug 覆盖层与状态面板</li>
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
+            <div className="text-sm font-semibold text-slate-100">快速开始</div>
+            <div className="mt-4 space-y-3 text-sm text-slate-300">
+              <div className="rounded-lg border border-white/10 bg-slate-950/60 px-4 py-3 font-mono text-xs">
+                pnpm dev
+              </div>
+              <p>
+                访问 <span className="text-slate-100">/hand-3d</span> 进入演示页面，允许摄像头权限即可体验。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-950/70 p-6">
+          <div className="text-sm font-semibold text-slate-100">交互提示</div>
+          <p className="mt-3 text-sm text-slate-300">
+            建议在光线充足的环境中使用，手部距离摄像头约 30-60cm。捏合动作越稳定，抓取体验越流畅。
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </section>
       </main>
     </div>
   );

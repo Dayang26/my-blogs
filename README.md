@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HandTrack 3D
 
-## Getting Started
+基于浏览器摄像头的实时手势识别与 3D 物理交互演示项目。
 
-First, run the development server:
+## 功能概览
+
+- MediaPipe Hands 实时 21 关节点追踪
+- 左右手识别、平滑滤波与置信度阈值控制
+- React Three Fiber + Rapier 物理交互场景
+- `/hand-3d` 页面提供调试与状态面板
+
+## 技术栈
+
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- @react-three/fiber / drei / rapier
+- MediaPipe Hands
+
+## 本地启动
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+访问：`http://localhost:3000/hand-3d`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 常用脚本
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `pnpm dev` 启动开发服务器
+- `pnpm build` 构建生产版本
+- `pnpm start` 启动生产服务器
+- `pnpm lint` 运行 ESLint
 
-## Learn More
+## 注意事项
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 首次进入 `/hand-3d` 需要允许摄像头权限
+- 推荐在光线充足环境使用以提升识别稳定性

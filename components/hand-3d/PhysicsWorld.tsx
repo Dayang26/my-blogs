@@ -1,6 +1,6 @@
 'use client';
 
-import { Physics, Debug } from '@react-three/rapier';
+import { Physics } from '@react-three/rapier';
 import { ReactNode } from 'react';
 
 interface PhysicsWorldProps {

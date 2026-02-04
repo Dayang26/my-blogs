@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GrabbableBox, GrabbableSphere, GrabbableObjectRef } from './GrabbableObjects';
@@ -29,23 +29,22 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
     const wasGrabbingRef = useRef(false);
 
     // 坐标映射器
-    const mapper = useRef(createCoordinateMapper(DEFAULT_MAPPER_CONFIG));
+    const mapper = useMemo(() => createCoordinateMapper(DEFAULT_MAPPER_CONFIG), []);
 
     // 速度追踪
     const velocityTracker = useVelocityTracker(8);
 
-    // 手部位置
-    const handPositionsRef = useRef<{
-        indexTip: THREE.Vector3 | null;
-        thumbTip: THREE.Vector3 | null;
-        palm: THREE.Vector3 | null;
-        pinchCenter: THREE.Vector3 | null;
-    }>({
-        indexTip: null,
-        thumbTip: null,
-        palm: null,
-        pinchCenter: null,
-    });
+    const renderHandPositions = useMemo(() => {
+        if (!handState.landmarks) {
+            return {
+                indexTip: null,
+                thumbTip: null,
+                palm: null,
+                pinchCenter: null,
+            };
+        }
+        return mapHandPositions(handState.landmarks as NormalizedLandmarkList, mapper);
+    }, [handState.landmarks, mapper]);
 
     // 注册物体 ref
     const registerObject = useCallback((id: string, ref: GrabbableObjectRef | null) => {
@@ -80,35 +79,12 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
     // 每帧更新
     useFrame(() => {
         // 更新手部位置
-        if (handState.landmarks) {
-            const landmarks = handState.landmarks as NormalizedLandmarkList;
-
-            handPositionsRef.current.indexTip = mapper.current.mapLandmarkToWorld(
-                landmarks[LandmarkIndex.INDEX_TIP]
-            );
-            handPositionsRef.current.thumbTip = mapper.current.mapLandmarkToWorld(
-                landmarks[LandmarkIndex.THUMB_TIP]
-            );
-            handPositionsRef.current.palm = mapper.current.mapLandmarkToWorld(
-                landmarks[LandmarkIndex.WRIST]
-            );
-
-            // 计算捏合中心点
-            if (handPositionsRef.current.indexTip && handPositionsRef.current.thumbTip) {
-                handPositionsRef.current.pinchCenter = handPositionsRef.current.indexTip
-                    .clone()
-                    .add(handPositionsRef.current.thumbTip)
-                    .multiplyScalar(0.5);
-            }
-        } else {
-            handPositionsRef.current.indexTip = null;
-            handPositionsRef.current.thumbTip = null;
-            handPositionsRef.current.palm = null;
-            handPositionsRef.current.pinchCenter = null;
-        }
+        const positions = handState.landmarks
+            ? mapHandPositions(handState.landmarks as NormalizedLandmarkList, mapper)
+            : null;
 
         const isPinching = handState.gesture.type === 'PINCH' && handState.gesture.pinchStrength > 0.7;
-        const pinchCenter = handPositionsRef.current.pinchCenter;
+        const pinchCenter = positions?.pinchCenter ?? null;
 
         // 处理抓取逻辑
         if (isPinching && pinchCenter) {
@@ -199,13 +175,27 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
             {/* 虚拟手 */}
             {handState.isDetected && (
                 <VirtualHand
-                    indexTipPosition={handPositionsRef.current.indexTip}
-                    thumbTipPosition={handPositionsRef.current.thumbTip}
-                    palmPosition={handPositionsRef.current.palm}
+                    indexTipPosition={renderHandPositions.indexTip}
+                    thumbTipPosition={renderHandPositions.thumbTip}
+                    palmPosition={renderHandPositions.palm}
                     visible={true}
                     isGrabbing={grabbedObjectId !== null}
                 />
             )}
         </>
     );
+}
+
+function mapHandPositions(landmarks: NormalizedLandmarkList, mapper: ReturnType<typeof createCoordinateMapper>) {
+    const indexTip = mapper.mapLandmarkToWorld(landmarks[LandmarkIndex.INDEX_TIP]);
+    const thumbTip = mapper.mapLandmarkToWorld(landmarks[LandmarkIndex.THUMB_TIP]);
+    const palm = mapper.mapLandmarkToWorld(landmarks[LandmarkIndex.WRIST]);
+    const pinchCenter = indexTip.clone().add(thumbTip).multiplyScalar(0.5);
+
+    return {
+        indexTip,
+        thumbTip,
+        palm,
+        pinchCenter,
+    };
 }

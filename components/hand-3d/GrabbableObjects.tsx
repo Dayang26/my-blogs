@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RigidBody, BallCollider, RapierRigidBody, vec3 } from '@react-three/rapier';
+import { RigidBody, RapierRigidBody, vec3 } from '@react-three/rapier';
 import * as THREE from 'three';
 
 interface GrabbableObjectProps {

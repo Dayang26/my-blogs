@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
 
 interface VelocityTrackerState {
@@ -82,7 +82,6 @@ export type GrabState = 'idle' | 'detecting' | 'grabbing' | 'holding';
 interface UseGrabbingOptions {
     grabRadius?: number;          // 抓取检测范围
     releaseVelocityScale?: number; // 释放速度缩放
-    minPinchStrength?: number;     // 最小捏合强度
 }
 
 interface UseGrabbingReturn {
@@ -101,7 +100,6 @@ export function useGrabbing(options?: UseGrabbingOptions): UseGrabbingReturn {
     const {
         grabRadius = 0.15,
         releaseVelocityScale = 3,
-        minPinchStrength = 0.7,
     } = options || {};
 
     const [grabState, setGrabState] = useState<GrabState>('idle');

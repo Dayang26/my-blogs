@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable react-hooks/refs */
+
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { createHandTracker, sendFrameToHands, MediaPipeResults } from '@/lib/hand-tracking/mediapipe';
 import { detectGesture } from '@/lib/hand-tracking/gesture-detector';
@@ -61,18 +63,21 @@ export function useHandTracking(
     const handsRef = useRef<HandsInstance | null>(null);
     const animationFrameRef = useRef<number | null>(null);
     const previousLandmarksRef = useRef<NormalizedLandmarkList | null>(null);
+    const cancelInitRef = useRef(false);
     const [handState, setHandState] = useState<HandState>(DEFAULT_HAND_STATE);
-    const [isLoading, setIsLoading] = useState(true);
     const [fps, setFps] = useState(0);
 
     // FPS 计算
-    const fpsCounterRef = useRef({ frames: 0, lastTime: performance.now() });
+    const fpsCounterRef = useRef({ frames: 0, lastTime: 0 });
 
     // 处理 MediaPipe 结果
     const handleResults = useCallback((results: MediaPipeResults) => {
         // 更新 FPS
         fpsCounterRef.current.frames++;
         const now = performance.now();
+        if (fpsCounterRef.current.lastTime === 0) {
+            fpsCounterRef.current.lastTime = now;
+        }
         if (now - fpsCounterRef.current.lastTime >= 1000) {
             setFps(fpsCounterRef.current.frames);
             fpsCounterRef.current.frames = 0;
@@ -112,44 +117,46 @@ export function useHandTracking(
         }
     }, [landmarkSmoothing, minGestureConfidence, minHandPresenceConfidence]);
 
+    const initHands = useCallback(async () => {
+        previousLandmarksRef.current = null;
+        fpsCounterRef.current.frames = 0;
+        fpsCounterRef.current.lastTime = 0;
+        try {
+            const hands = await createHandTracker(handsConfig, handleResults);
+            if (cancelInitRef.current) {
+                hands.close();
+                return;
+            }
+            await hands.initialize();
+            if (cancelInitRef.current) {
+                hands.close();
+                return;
+            }
+            handsRef.current = hands;
+        } catch (err) {
+            console.error('MediaPipe Hands 初始化失败:', err);
+        }
+    }, [handsConfig, handleResults]);
+
     // 初始化 MediaPipe Hands
     useEffect(() => {
         if (!enabled) return;
 
-        let mounted = true;
-        setIsLoading(true);
-
-        const initHands = async () => {
-            try {
-                const hands = await createHandTracker(handsConfig, handleResults);
-
-                if (mounted) {
-                    await hands.initialize();
-                    handsRef.current = hands;
-                    setIsLoading(false);
-                }
-            } catch (err) {
-                console.error('MediaPipe Hands 初始化失败:', err);
-                if (mounted) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        initHands();
+        cancelInitRef.current = false;
+        void initHands();
 
         return () => {
-            mounted = false;
+            cancelInitRef.current = true;
             if (handsRef.current) {
                 handsRef.current.close();
                 handsRef.current = null;
             }
         };
-    }, [enabled, handleResults, handsConfig]);
+    }, [enabled, initHands]);
 
     // 持续发送视频帧进行检测
     useEffect(() => {
-        if (!enabled || isLoading) return;
+        if (!enabled) return;
 
         const detectFrame = async () => {
             const video = videoRef.current;
@@ -174,23 +181,16 @@ export function useHandTracking(
                 animationFrameRef.current = null;
             }
         };
-    }, [enabled, isLoading, videoRef]);
+    }, [enabled, videoRef]);
 
-    // 停止时重置状态
-    useEffect(() => {
-        if (enabled) return;
-        previousLandmarksRef.current = null;
-        setHandState(DEFAULT_HAND_STATE);
-        setIsLoading(false);
-        setFps(0);
-        fpsCounterRef.current.frames = 0;
-        fpsCounterRef.current.lastTime = performance.now();
-    }, [enabled]);
+    const outputHandState = enabled ? handState : DEFAULT_HAND_STATE;
+    const outputFps = enabled && fpsCounterRef.current.lastTime !== 0 ? fps : 0;
+    const outputIsLoading = enabled && handsRef.current === null;
 
     return {
-        handState,
-        isLoading,
-        fps,
+        handState: outputHandState,
+        isLoading: outputIsLoading,
+        fps: outputFps,
     };
 }
 

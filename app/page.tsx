@@ -1,66 +1,77 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="pointer-events-none fixed inset-0">
-        <div className="absolute left-[-120px] top-[-80px] h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute bottom-[-120px] right-[-120px] h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
-      </div>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 text-slate-100">
+      <Image
+        src="/img.png"
+        alt="Pixel background"
+        fill
+        priority
+        className="pixelated object-cover opacity-90"
+      />
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/70 to-slate-950/90" />
 
-      <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 py-20">
-        <header className="flex flex-col gap-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-cyan-200">
-            Gesture Physics Lab
+      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-16 pt-20 lg:flex-row lg:items-end lg:justify-between">
+        <section className="space-y-6">
+          <div className="inline-flex items-center gap-2 border-2 border-slate-200/70 bg-slate-900/70 px-3 py-1 text-xs font-mono uppercase tracking-[0.3em] text-slate-100 shadow-[4px_4px_0px_rgba(15,23,42,0.9)]">
+            Pixel Mode
           </div>
+
           <div className="space-y-4">
-            <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
+            <h1 className="text-4xl font-bold uppercase tracking-[0.12em] text-slate-100 md:text-5xl">
               HandTrack 3D
             </h1>
-            <p className="max-w-2xl text-base text-slate-300 md:text-lg">
-              使用普通摄像头实时识别手势，在 3D 物理世界里完成抓取、拖动与抛掷。
-              专注于手势稳定性与交互反馈，适合展示与原型验证。
+            <p className="max-w-xl text-sm font-mono leading-relaxed text-slate-200/90 md:text-base">
+              用普通摄像头驱动像素世界的 3D 物理试验区。实时手势识别、抓取与抛掷，
+              以游戏化方式展示交互能力。
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/hand-3d"
-              className="rounded-lg bg-cyan-400 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
-            >
-              Launch Demo
-            </Link>
-          </div>
-        </header>
 
-        <section className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
-            <div className="text-sm font-semibold text-slate-100">核心能力</div>
-            <ul className="mt-4 space-y-2 text-sm text-slate-300">
-              <li>MediaPipe Hands 实时 21 关节点追踪</li>
-              <li>React Three Fiber + Rapier 物理交互</li>
-              <li>左右手识别、平滑滤波、置信度门限</li>
-              <li>可视化 Debug 覆盖层与状态面板</li>
-            </ul>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6">
-            <div className="text-sm font-semibold text-slate-100">快速开始</div>
-            <div className="mt-4 space-y-3 text-sm text-slate-300">
-              <div className="rounded-lg border border-white/10 bg-slate-950/60 px-4 py-3 font-mono text-xs">
-                pnpm dev
-              </div>
-              <p>
-                访问 <span className="text-slate-100">/hand-3d</span> 进入演示页面，允许摄像头权限即可体验。
-              </p>
+          <div className="flex items-end gap-4">
+            <div className="rounded-xl border-2 border-slate-200/60 bg-slate-900/70 p-3 shadow-[4px_4px_0px_rgba(15,23,42,0.9)]">
+              <Image
+                src="/rw.png"
+                alt="Pixel hero"
+                width={110}
+                height={140}
+                className="pixelated"
+              />
             </div>
+            <div className="rounded-xl border-2 border-amber-200/70 bg-amber-500/10 p-2 shadow-[4px_4px_0px_rgba(120,53,15,0.9)]">
+              <Image
+                src="/fire.png"
+                alt="Pixel fire"
+                width={72}
+                height={72}
+                className="pixelated"
+              />
+            </div>
+          </div>
+
+          <div className="text-xs font-mono text-slate-300/80">
+            Tip: 光线越稳定，手势识别越稳。
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900/70 to-slate-950/70 p-6">
-          <div className="text-sm font-semibold text-slate-100">交互提示</div>
-          <p className="mt-3 text-sm text-slate-300">
-            建议在光线充足的环境中使用，手部距离摄像头约 30-60cm。捏合动作越稳定，抓取体验越流畅。
-          </p>
+        <section className="flex w-full flex-col gap-4 sm:w-72 lg:self-end">
+          <Link
+            href="/hand-3d"
+            className="group w-full border-2 border-cyan-200/80 bg-cyan-400/90 px-5 py-4 text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-950 shadow-[6px_6px_0px_rgba(14,116,144,0.8)] transition active:translate-x-1 active:translate-y-1 active:shadow-[3px_3px_0px_rgba(14,116,144,0.8)]"
+          >
+            进入试验区
+          </Link>
+          <Link
+            href="/logs"
+            className="group w-full border-2 border-slate-200/80 bg-slate-900/80 px-5 py-4 text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-100 shadow-[6px_6px_0px_rgba(30,41,59,0.9)] transition hover:bg-slate-800/80 active:translate-x-1 active:translate-y-1 active:shadow-[3px_3px_0px_rgba(30,41,59,0.9)]"
+          >
+            日志区域
+          </Link>
+          <div className="rounded-xl border-2 border-slate-200/40 bg-slate-900/70 px-4 py-3 text-xs font-mono text-slate-200/80 shadow-[4px_4px_0px_rgba(15,23,42,0.9)]">
+            试验区用于手势与 3D 物理验证。
+            日志区域用于记录观察与数据。
+          </div>
         </section>
       </main>
     </div>

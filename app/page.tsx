@@ -85,7 +85,7 @@ export default function Home() {
             进入试验区
           </Link>
           <Link
-            href="/logs"
+            href="/blog"
             className="border-2 border-slate-200/90 bg-slate-900/90 px-6 py-4 text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-100 shadow-[6px_6px_0px_rgba(30,41,59,0.9)] transition active:translate-x-1 active:translate-y-1 active:shadow-[3px_3px_0px_rgba(30,41,59,0.9)]"
           >
             日志区域

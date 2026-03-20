@@ -16,6 +16,9 @@
 # next.js
 /.next/
 /out/
+.velite/
+public/static/
+public/searchIndex.json
 
 # production
 /build
@@ -39,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+#
+content

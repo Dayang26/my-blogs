@@ -6,6 +6,8 @@ import { useBlogLanguage } from '@/hooks/useBlogLanguage';
 import type { Lang, PostEntity, PostListItem } from '@/types/blog';
 import { formatBlogDate, getLanguageLabel, getTagLabel } from '@/lib/blog-shared';
 import { MDXContent } from '@/components/mdx-content';
+import { Giscus } from '@/components/mdx/giscus';
+import { giscusConfig, commentsUiText } from '@/lib/giscus-config';
 
 const getI18n = (post: PostEntity | PostListItem, lang: Lang) =>
   post.i18n[lang] ?? post.i18n.zh ?? post.i18n.en;
@@ -46,15 +48,17 @@ type BlogPostClientProps = {
 
 export default function BlogPostClient({ post, prev, next, related }: BlogPostClientProps) {
   const { lang, setLang } = useBlogLanguage('zh');
-  const content = useMemo(() => getI18n(post, lang), [post, lang]);
-  const copy = uiText[lang];
-
-  const fallbackLang = useMemo(() => {
-    if (post.i18n[lang]) return null;
+  
+  const availableLang = useMemo(() => {
+    if (post.i18n[lang]) return lang;
     if (post.i18n.zh) return 'zh';
     if (post.i18n.en) return 'en';
     return null;
   }, [lang, post]);
+  
+  const currentLang = availableLang || lang;
+  const content = useMemo(() => getI18n(post, currentLang), [post, currentLang]);
+  const copy = uiText[currentLang];
 
   if (!content) {
     return (
@@ -117,9 +121,9 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
               </span>
             ))}
           </div>
-          {fallbackLang && (
+          {availableLang && availableLang !== lang && (
             <div className="text-xs font-mono uppercase tracking-[0.2em] text-amber-200">
-              {copy.fallback} {getLanguageLabel(fallbackLang)}
+              {copy.fallback} {getLanguageLabel(availableLang)}
             </div>
           )}
         </section>
@@ -192,10 +196,23 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
                   </Link>
                 );
               })}
-            </div>
-          </section>
+      </div>
+      </section>
+      )}
+
+      <section className="pixel-card mt-8 p-6">
+        <h3 className="mb-4 text-lg font-bold uppercase tracking-[0.12em]">
+          {commentsUiText[lang].comments}
+        </h3>
+        {giscusConfig.repoId && giscusConfig.categoryId ? (
+          <Giscus {...giscusConfig} />
+        ) : (
+          <div className="text-sm text-slate-400">
+            请在 GitHub 上启用 Discussions 并配置 Giscus。详见 lib/giscus-config.ts
+          </div>
         )}
-      </main>
+      </section>
+    </main>
     </div>
   );
 }

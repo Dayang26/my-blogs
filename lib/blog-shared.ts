@@ -1,18 +1,12 @@
 import type { Lang } from '@/types/blog';
 
 export const tagLabels: Record<string, { zh: string; en: string }> = {
-  Performance: { zh: '性能', en: 'Performance' },
-  Vision: { zh: '视觉', en: 'Vision' },
-  Architecture: { zh: '架构', en: 'Architecture' },
-  Design: { zh: '设计', en: 'Design' },
-  Motion: { zh: '动效', en: 'Motion' },
-  UI: { zh: '界面', en: 'UI' },
-  Calibration: { zh: '校准', en: 'Calibration' },
-  Physics: { zh: '物理', en: 'Physics' },
-  Simulation: { zh: '模拟', en: 'Simulation' },
-  Rendering: { zh: '渲染', en: 'Rendering' },
-  Release: { zh: '版本', en: 'Release' },
-  Product: { zh: '产品', en: 'Product' },
+  AI: { zh: 'AI', en: 'AI' },
+  RAG: { zh: 'RAG', en: 'RAG' },
+  Architecture: { zh: '系统架构', en: 'Architecture' },
+  Philosophy: { zh: '哲学', en: 'Philosophy' },
+  Money: { zh: '搞钱', en: 'Money' },
+  Rambles: { zh: '碎碎念', en: 'Rambles' },
 };
 
 export const formatBlogDate = (value?: string) => {

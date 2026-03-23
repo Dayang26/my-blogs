@@ -1,0 +1,18 @@
+---
+title: 像素雪花动效实现
+excerpt: 在不引入 Canvas 的情况下，用 CSS 动效实现落雪。
+---
+
+## 实现要点
+
+- 使用多个伪元素模拟雪花层
+- 不同速度形成深度
+- 降低透明度避免遮挡内容
+
+## 代码片段
+
+```
+@keyframes snow {
+  to { transform: translateY(120px); }
+}
+```

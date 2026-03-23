@@ -187,15 +187,23 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
 }
 
 function mapHandPositions(landmarks: NormalizedLandmarkList, mapper: ReturnType<typeof createCoordinateMapper>) {
-    const indexTip = mapper.mapLandmarkToWorld(landmarks[LandmarkIndex.INDEX_TIP]);
-    const thumbTip = mapper.mapLandmarkToWorld(landmarks[LandmarkIndex.THUMB_TIP]);
-    const palm = mapper.mapLandmarkToWorld(landmarks[LandmarkIndex.WRIST]);
-    const pinchCenter = indexTip.clone().add(thumbTip).multiplyScalar(0.5);
+  const indexLandmark = landmarks[LandmarkIndex.INDEX_TIP];
+  const thumbLandmark = landmarks[LandmarkIndex.THUMB_TIP];
+  const palmLandmark = landmarks[LandmarkIndex.WRIST];
+  
+  if (!indexLandmark || !thumbLandmark || !palmLandmark) {
+    throw new Error('Missing required landmarks');
+  }
+  
+  const indexTip = mapper.mapLandmarkToWorld(indexLandmark);
+  const thumbTip = mapper.mapLandmarkToWorld(thumbLandmark);
+  const palm = mapper.mapLandmarkToWorld(palmLandmark);
+  const pinchCenter = indexTip.clone().add(thumbTip).multiplyScalar(0.5);
 
-    return {
-        indexTip,
-        thumbTip,
-        palm,
-        pinchCenter,
-    };
+  return {
+    indexTip,
+    thumbTip,
+    palm,
+    pinchCenter,
+  };
 }

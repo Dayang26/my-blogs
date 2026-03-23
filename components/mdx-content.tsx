@@ -3,8 +3,11 @@
 
 import * as runtime from 'react/jsx-runtime';
 import type { ComponentType } from 'react';
+import { Video } from './mdx/video';
 
-const sharedComponents: Record<string, ComponentType> = {};
+const sharedComponents: MDXComponents = {
+  Video: Video as ComponentType<{ children?: React.ReactNode }>,
+};
 
 const componentCache = new Map<string, ComponentType>();
 

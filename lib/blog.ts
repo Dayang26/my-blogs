@@ -1,12 +1,16 @@
+import { cache } from 'react';
 import { posts as metaPosts, postI18n } from '../.velite';
 import type { Lang, PostEntity, PostI18n, PostI18nLite, PostListItem, SeriesGroup } from '@/types/blog';
 
 const buildI18nMap = () => {
   const map = new Map<string, Partial<Record<Lang, PostI18n>>>();
   for (const entry of postI18n) {
-    if (entry.lang !== 'zh' && entry.lang !== 'en') continue;
-    const existing = map.get(entry.slug) ?? {};
-    map.set(entry.slug, { ...existing, [entry.lang]: entry });
+    const lang = entry.lang.replace('.mdx', '') as Lang;
+    if (lang !== 'zh' && lang !== 'en') continue;
+    const slug = entry.slug;
+    if (!slug) continue;
+    const existing = map.get(slug) ?? {};
+    map.set(slug, { ...existing, [lang]: entry });
   }
   return map;
 };
@@ -30,10 +34,12 @@ const toI18nLite = (entry?: PostI18n): PostI18nLite | undefined => {
 
 const i18nBySlug = buildI18nMap();
 
-const mergedPosts: PostEntity[] = metaPosts.map((post) => ({
-  ...post,
-  i18n: i18nBySlug.get(post.slug) ?? {},
-}));
+const mergedPosts: PostEntity[] = metaPosts
+  .filter((post) => post.slug)
+  .map((post) => ({
+    ...post,
+    i18n: i18nBySlug.get(post.slug!) ?? {},
+  }));
 
 const publishedPosts = mergedPosts.filter((post) => post.status === 'published');
 
@@ -139,7 +145,7 @@ export const getLanguagePair = (post: PostEntity, lang: Lang) => {
   return post.i18n.zh ?? post.i18n.en;
 };
 
-export const getBlogIndexData = () => {
+export const getBlogIndexData = cache(() => {
   const posts = blogListPosts;
   return {
     posts,
@@ -150,12 +156,12 @@ export const getBlogIndexData = () => {
     tags: ['All', ...getTags(posts)],
     latestDate: getLatestUpdateDate(posts),
   };
-};
+});
 
-export const getPostStats = () => ({
+export const getPostStats = cache(() => ({
   total: blogListPosts.length,
   tags: getTags().length,
   series: getSeriesGroups().length,
-});
+}));
 
 export { formatBlogDate, getLanguageLabel, tagLabels } from './blog-shared';

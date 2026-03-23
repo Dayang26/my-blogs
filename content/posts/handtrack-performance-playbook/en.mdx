@@ -1,0 +1,22 @@
+---
+title: Hand Interaction Performance Playbook
+excerpt: The keys to staying above 30 FPS are sampling cadence, filtering strategy, and render isolation.
+---
+
+## Goal
+
+Keep interaction stable under low light and complex backgrounds while sustaining 30+ FPS.
+
+## Key Strategies
+
+- Reduce per-frame work by moving heavy tasks into a fixed sampling loop.
+- Use a threshold gate before smoothing to avoid overfitting noise.
+- Separate rendering from detection so the renderer only consumes stable states.
+
+## Results
+
+On the same hardware, frame jitter dropped from 12 FPS to 3 FPS and false positives reduced.
+
+## Summary
+
+Performance tuning is about predictability and headroom, not cutting features.

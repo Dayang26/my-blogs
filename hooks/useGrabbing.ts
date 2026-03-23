@@ -42,22 +42,23 @@ export function useVelocityTracker(maxSamples: number = 5) {
             state.timestamps.shift();
         }
 
-        // 计算速度 (使用最早和最新的样本)
-        if (state.positions.length >= 2) {
-            const oldestPos = state.positions[0];
-            const newestPos = state.positions[state.positions.length - 1];
-            const oldestTime = state.timestamps[0];
-            const newestTime = state.timestamps[state.timestamps.length - 1];
+// 计算速度 (使用最早和最新的样本)
+    if (state.positions.length >= 2) {
+      const oldestPos = state.positions[0];
+      const newestPos = state.positions[state.positions.length - 1];
+      const oldestTime = state.timestamps[0];
+      const newestTime = state.timestamps[state.timestamps.length - 1];
 
-            const deltaTime = (newestTime - oldestTime) / 1000; // 转换为秒
-
-            if (deltaTime > 0) {
-                state.currentVelocity
-                    .copy(newestPos)
-                    .sub(oldestPos)
-                    .divideScalar(deltaTime);
-            }
+      if (oldestPos && newestPos && oldestTime !== undefined && newestTime !== undefined) {
+        const deltaTime = (newestTime - oldestTime) / 1000;
+        if (deltaTime > 0) {
+          state.currentVelocity
+            .copy(newestPos)
+            .sub(oldestPos)
+            .divideScalar(deltaTime);
         }
+      }
+    }
     }, [maxSamples]);
 
     const getVelocity = useCallback((): THREE.Vector3 => {

@@ -28,8 +28,8 @@ export function isFingerExtended(
     fingerIndex: number,
     handedness?: 'Left' | 'Right' | null
 ): boolean {
-    // 每根手指的关键点偏移
-    const fingerOffsets = [
+    // 每根手指的关键点偏移 - 使用元组类型确保类型安全
+    const fingerOffsets: [number, number, number, number][] = [
         [1, 2, 3, 4],     // 拇指: CMC, MCP, IP, TIP
         [5, 6, 7, 8],     // 食指: MCP, PIP, DIP, TIP
         [9, 10, 11, 12],  // 中指
@@ -37,10 +37,14 @@ export function isFingerExtended(
         [17, 18, 19, 20], // 小指
     ];
 
-    const offsets = fingerOffsets[fingerIndex];
-    const mcp = landmarks[offsets[0]];
-    const pip = landmarks[offsets[1]];
-    const tip = landmarks[offsets[3]];
+    if (fingerIndex < 0 || fingerIndex >= fingerOffsets.length) return false;
+    const offsets = fingerOffsets[fingerIndex]!;
+    const [mcpIdx, pipIdx, , tipIdx] = offsets;
+    const mcp = landmarks[mcpIdx];
+    const pip = landmarks[pipIdx];
+    const tip = landmarks[tipIdx];
+
+    if (!mcp || !pip || !tip) return false;
 
     if (fingerIndex === 0) {
         // 拇指特殊处理: 使用 x 坐标判断 (区分左右手)
@@ -68,6 +72,10 @@ export function detectPinch(landmarks: NormalizedLandmarkList): {
 } {
     const thumbTip = landmarks[LandmarkIndex.THUMB_TIP];
     const indexTip = landmarks[LandmarkIndex.INDEX_TIP];
+
+    if (!thumbTip || !indexTip) {
+        return { isPinching: false, strength: 0, distance: 1 };
+    }
 
     const distance = calculateDistance(thumbTip, indexTip);
 

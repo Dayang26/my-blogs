@@ -1,9 +1,7 @@
 import BlogIndexClient from '@/components/blog/BlogIndexClient';
-import { getBlogIndexData, getPostStats } from '@/lib/blog';
+import { getBlogIndexData } from '@/lib/blog';
 
 export default function BlogPage() {
-  const data = getBlogIndexData();
-  const stats = getPostStats();
-
-  return <BlogIndexClient {...data} stats={stats} />;
+  const { posts, tags } = getBlogIndexData();
+  return <BlogIndexClient posts={posts} tags={tags} />;
 }

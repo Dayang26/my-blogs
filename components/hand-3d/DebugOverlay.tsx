@@ -59,15 +59,16 @@ export function DebugOverlay({ videoRef, handState, fps, isLoading }: DebugOverl
         ctx.strokeStyle = '#00ff00';
         ctx.lineWidth = 2;
 
-        HAND_CONNECTIONS.forEach(([start, end]) => {
-            const p1 = landmarks[start];
-            const p2 = landmarks[end];
+  HAND_CONNECTIONS.forEach(([start, end]) => {
+    const p1 = landmarks[start as LandmarkIndex];
+    const p2 = landmarks[end as LandmarkIndex];
+    if (!p1 || !p2) return;
 
-            ctx.beginPath();
-            ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height);
-            ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height);
-            ctx.stroke();
-        });
+    ctx.beginPath();
+    ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height);
+    ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height);
+    ctx.stroke();
+  });
 
         // 绘制关键点
         landmarks.forEach((point, index) => {
@@ -89,18 +90,20 @@ export function DebugOverlay({ videoRef, handState, fps, isLoading }: DebugOverl
         });
 
         // 如果正在捏合，标记捏合点
-        if (handState.gesture.type === 'PINCH') {
-            const thumb = landmarks[LandmarkIndex.THUMB_TIP];
-            const index = landmarks[LandmarkIndex.INDEX_TIP];
-            const midX = ((thumb.x + index.x) / 2) * canvas.width;
-            const midY = ((thumb.y + index.y) / 2) * canvas.height;
+  if (handState.gesture.type === 'PINCH') {
+    const thumb = landmarks[LandmarkIndex.THUMB_TIP];
+    const index = landmarks[LandmarkIndex.INDEX_TIP];
+    if (thumb && index) {
+      const midX = ((thumb.x + index.x) / 2) * canvas.width;
+      const midY = ((thumb.y + index.y) / 2) * canvas.height;
 
-            ctx.strokeStyle = '#ff0000';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(midX, midY, 15, 0, Math.PI * 2);
-            ctx.stroke();
-        }
+      ctx.strokeStyle = '#ff0000';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(midX, midY, 15, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
     }, [handState, videoRef]);
 
     const gestureEmoji: Record<string, string> = {
@@ -140,9 +143,9 @@ export function DebugOverlay({ videoRef, handState, fps, isLoading }: DebugOverl
                         </div>
                         <div>捏合强度: {(handState.gesture.pinchStrength * 100).toFixed(0)}%</div>
 
-                        <div className="mt-2 text-xs opacity-70">
-                            食指: ({handState.landmarks[8].x.toFixed(2)}, {handState.landmarks[8].y.toFixed(2)})
-                        </div>
+        <div className="mt-2 text-xs opacity-70">
+          食指: ({handState.landmarks?.[8]?.x?.toFixed(2) ?? 'N/A'}, {handState.landmarks?.[8]?.y?.toFixed(2) ?? 'N/A'})
+        </div>
                     </>
                 )}
             </div>

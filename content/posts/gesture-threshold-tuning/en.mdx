@@ -1,0 +1,19 @@
+---
+title: Tuning Gesture Detection Thresholds
+excerpt: Lighting and background shifts can heavily affect recognition accuracy.
+---
+
+## Setup
+
+- Indoor lighting 200–400 lux
+- Dark vs. bright background
+- Sampling at 30Hz
+
+## Findings
+
+- Low light requires a +0.05 to +0.1 threshold bump.
+- Too high a threshold drops light pinch gestures.
+
+## Recommendation
+
+Stabilize detection first, then gradually increase sensitivity.

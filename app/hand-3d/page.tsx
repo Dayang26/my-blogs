@@ -2,14 +2,33 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useCamera } from '@/hooks/useCamera';
 import { useHandTracking } from '@/hooks/useHandTracking';
-import {
-    Scene3D,
-    PhysicsWorld,
-    InteractiveScene,
-    DebugOverlay,
-} from '@/components/hand-3d';
+import { DebugOverlay } from '@/components/hand-3d';
+
+// Lazy load heavy 3D components to reduce initial bundle size
+const Scene3D = dynamic(
+    () => import('@/components/hand-3d/Scene3D').then((mod) => mod.Scene3D),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex h-full w-full items-center justify-center bg-slate-900">
+                <div className="text-slate-400">Loading 3D Scene...</div>
+            </div>
+        ),
+    }
+);
+
+const PhysicsWorld = dynamic(
+    () => import('@/components/hand-3d/PhysicsWorld').then((mod) => mod.PhysicsWorld),
+    { ssr: false }
+);
+
+const InteractiveScene = dynamic(
+    () => import('@/components/hand-3d/InteractiveScene').then((mod) => mod.InteractiveScene),
+    { ssr: false }
+);
 
 /**
  * 手势追踪 3D 交互演示页面

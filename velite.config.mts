@@ -48,21 +48,23 @@ export default defineConfig({
     const i18nBySlug = new Map<string, { zh?: (typeof data.postI18n)[number]; en?: (typeof data.postI18n)[number] }>();
 
     for (const item of data.postI18n) {
+      if (!item.slug) continue;
       const entry = i18nBySlug.get(item.slug) ?? {};
-      if (item.lang === 'zh') entry.zh = item;
-      if (item.lang === 'en') entry.en = item;
+      const lang = item.lang.replace('.mdx', '') as 'zh' | 'en';
+      if (lang === 'zh') entry.zh = item;
+      if (lang === 'en') entry.en = item;
       i18nBySlug.set(item.slug, entry);
     }
 
     const searchIndex = data.posts
-      .filter((post) => post.status === 'published')
+      .filter((post) => post.status === 'published' && post.slug)
       .flatMap((post) => {
-        const i18n = i18nBySlug.get(post.slug);
+        const i18n = i18nBySlug.get(post.slug!);
         if (!i18n) return [];
         const entries = [i18n.zh, i18n.en].filter(Boolean) as (typeof data.postI18n)[number][];
         return entries.map((entry) => ({
           slug: post.slug,
-          lang: entry.lang,
+          lang: entry.lang.replace('.mdx', ''),
           title: entry.title,
           excerpt: entry.excerpt,
           tags: post.tags,

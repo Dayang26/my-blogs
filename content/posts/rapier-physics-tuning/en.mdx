@@ -1,0 +1,20 @@
+---
+title: Rapier Physics Tuning Notes
+excerpt: The feel of grab and throw comes from friction, mass, and impulse ratios.
+---
+
+## Key Parameters
+
+- Friction: controls sliding and settling
+- Mass: defines inertia and responsiveness
+- Impulse threshold: controls throw amplitude
+
+## Tip
+
+Use "mass tiers" so heavier items feel slower and steadier.
+
+## Example
+
+```
+const impulse = Math.min(pinchStrength * 1.4, 1.0);
+```

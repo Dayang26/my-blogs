@@ -126,6 +126,12 @@ body {
   box-shadow: 2px 2px 0 rgba(14, 116, 144, 0.8);
 }
 
+.pixel-chip:hover {
+  border-color: rgba(103, 232, 249, 0.5);
+  transform: translate(-1px, -1px);
+  box-shadow: 2px 2px 0 rgba(103, 232, 249, 0.2);
+}
+
 .pixel-chip:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0 rgba(30, 41, 59, 0.9);

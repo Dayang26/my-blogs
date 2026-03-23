@@ -78,19 +78,22 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
 
       <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 pb-20 pt-12">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/blog" className="pixel-chip px-4 py-2 text-xs font-mono uppercase tracking-[0.2em]">
+          <Link href="/blog" className="pixel-chip group px-4 py-2 text-xs font-mono uppercase tracking-[0.2em]">
             {copy.back}
           </Link>
-          <div className="flex items-center rounded-full border border-slate-200/40 bg-slate-900/70 p-1">
+          <div className="flex items-center rounded-lg border border-slate-700/50 bg-slate-900/50 p-0.5">
             {(['zh', 'en'] as Lang[]).map((option) => (
               <button
                 key={option}
                 type="button"
                 onClick={() => setLang(option)}
-                className={`px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] transition ${
-                  lang === option ? 'bg-cyan-400 text-slate-950' : 'text-slate-300'
+                className={`relative px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] transition-colors ${
+                  lang === option ? 'text-cyan-100' : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
+                {lang === option && (
+                  <span className="absolute inset-0 rounded-md bg-cyan-500/10" />
+                )}
                 {getLanguageLabel(option)}
               </button>
             ))}

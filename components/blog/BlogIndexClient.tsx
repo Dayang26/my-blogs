@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useBlogLanguage } from '@/hooks/useBlogLanguage';
-import type { Lang, PostListItem, SearchIndexItem } from '@/types/blog';
-import { formatBlogDate, getLanguageLabel, getTagLabel } from '@/lib/blog-shared';
+import { LANGS, type Lang, type PostListItem, type SearchIndexItem } from '@/types/blog';
+import { formatBlogDate, getI18n, getLanguageLabel, getTagLabel } from '@/lib/blog-shared';
 import { CustomSelect } from '@/components/ui/custom-select';
 
 const PAGE_SIZE = 12;
@@ -58,8 +58,6 @@ const uiText = {
     },
   },
 };
-
-const getI18n = (post: PostListItem, lang: Lang) => post.i18n[lang] ?? post.i18n.zh ?? post.i18n.en;
 
 export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
   const { lang, setLang } = useBlogLanguage('zh');
@@ -167,18 +165,19 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
                 >
                   {copy.control.clear}
                 </button>
-                <div className="flex items-center rounded-lg border-2 border-slate-600 bg-slate-900 p-0.5">
-                  {(['zh', 'en'] as Lang[]).map((option) => (
+                <div className="flex items-center rounded-lg border border-slate-700/50 bg-slate-900/50 p-0.5">
+                  {LANGS.map((option) => (
                     <button
                       key={option}
                       type="button"
                       onClick={() => { setLang(option); resetVisible(); }}
-                      className={`px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] transition rounded-md ${
-                        lang === option
-                          ? 'bg-cyan-400 text-slate-950'
-                          : 'text-slate-300 hover:text-slate-100'
+                      className={`relative px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] transition-colors ${
+                        lang === option ? 'text-cyan-100' : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
+                      {lang === option && (
+                        <span className="absolute inset-0 rounded-md bg-cyan-500/10" />
+                      )}
                       {getLanguageLabel(option)}
                     </button>
                   ))}

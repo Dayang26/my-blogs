@@ -1,4 +1,7 @@
-import type { Lang } from '@/types/blog';
+import type { Lang, PostEntity, PostListItem } from '@/types/blog';
+
+export const getI18n = <T extends PostEntity | PostListItem>(post: T, lang: Lang) =>
+  post.i18n[lang] ?? post.i18n.zh ?? post.i18n.en;
 
 export const tagLabels: Record<string, { zh: string; en: string }> = {
   AI: { zh: 'AI', en: 'AI' },

@@ -1,5 +1,7 @@
 export type Lang = 'zh' | 'en';
 
+export const LANGS: Lang[] = ['zh', 'en'];
+
 export type PostMeta = (typeof import('../.velite').posts)[number];
 export type PostI18n = (typeof import('../.velite').postI18n)[number];
 

@@ -3,14 +3,11 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { useBlogLanguage } from '@/hooks/useBlogLanguage';
-import type { Lang, PostEntity, PostListItem } from '@/types/blog';
-import { formatBlogDate, getLanguageLabel, getTagLabel } from '@/lib/blog-shared';
+import { LANGS, type Lang, type PostEntity, type PostListItem } from '@/types/blog';
+import { formatBlogDate, getI18n, getLanguageLabel, getTagLabel } from '@/lib/blog-shared';
 import { MDXContent } from '@/components/mdx-content';
 import { Giscus } from '@/components/mdx/giscus';
 import { giscusConfig, commentsUiText } from '@/lib/giscus-config';
-
-const getI18n = (post: PostEntity | PostListItem, lang: Lang) =>
-  post.i18n[lang] ?? post.i18n.zh ?? post.i18n.en;
 
 const uiText = {
   zh: {
@@ -78,11 +75,11 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
 
       <main className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 pb-20 pt-12">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <Link href="/blog" className="pixel-chip group px-4 py-2 text-xs font-mono uppercase tracking-[0.2em]">
+          <Link href="/blog" className="pixel-chip px-4 py-2 text-xs font-mono uppercase tracking-[0.2em]">
             {copy.back}
           </Link>
           <div className="flex items-center rounded-lg border border-slate-700/50 bg-slate-900/50 p-0.5">
-            {(['zh', 'en'] as Lang[]).map((option) => (
+            {LANGS.map((option) => (
               <button
                 key={option}
                 type="button"

@@ -70,16 +70,49 @@ function RealCartoonEarth() {
     uniforms.uTime.value = state.clock.elapsedTime;
   });
 
+  // CPU-side texture data extraction to block clicking on land
+  const topoData = useMemo(() => {
+    if (typeof document === 'undefined') return null;
+    if (!topologyMap || !topologyMap.image) return null;
+    const img = topologyMap.image;
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width || 1024;
+    canvas.height = img.height || 512;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+    // Draw the topology map to read its brightness exactly simulating the GLSL
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return {
+      data: ctx.getImageData(0, 0, canvas.width, canvas.height).data,
+      width: canvas.width,
+      height: canvas.height
+    };
+  }, [topologyMap]);
+
   const handlePointerDown = (e: any) => {
-    e.stopPropagation(); // Only register the click for ripple, prevent bubbling
+    e.stopPropagation(); 
     if (e.intersections && e.intersections.length > 0) {
-      // Get strict local coordinates on the sphere surface regardless of rotation
-      const localPoint = e.object.worldToLocal(e.point.clone());
-      const idx = rippleIndex.current;
-      uniforms.uRipples.value[idx].copy(localPoint);
-      uniforms.uRippleTimes.value[idx] = uniforms.uTime.value;
-      // Advance ring buffer
-      rippleIndex.current = (idx + 1) % maxRipples;
+       const hit = e.intersections[0];
+       
+       // Detect if the click was exactly on the land by reading the matching UV pixel
+       if (topoData && hit.uv) {
+           const x = Math.floor(hit.uv.x * topoData.width);
+           // In WebGL, UV (0,0) is bottom-left, but canvas (0,0) is top-left
+           const y = Math.floor((1.0 - hit.uv.y) * topoData.height);
+           const index = (y * topoData.width + x) * 4;
+           const brightness = topoData.data[index] ?? 0; // read the red channel
+           
+           // If the grayscale value > 10 (out of 255), we're hitting land (0.04 > 0.01 shader threshold)
+           if (brightness > 10) {
+               return; // Abort: The user clicked solid land, do not spawn a water block ripple!
+           }
+       }
+       
+       const localPoint = e.object.worldToLocal(hit.point.clone());
+       const idx = rippleIndex.current;
+       uniforms.uRipples.value[idx].copy(localPoint);
+       uniforms.uRippleTimes.value[idx] = uniforms.uTime.value;
+       rippleIndex.current = (idx + 1) % maxRipples;
     }
   };
 
@@ -101,7 +134,32 @@ function RealCartoonEarth() {
       varying float vHeight;
       varying float vWave;
       
-      float getWaterHeight(vec3 p, float time) {
+      #define PI 3.141592653589793
+      vec2 getEquirectangularUV(vec3 p) {
+          vec3 n = normalize(p);
+          // Match Three.js sphere UV mapping
+          float u = 0.5 + atan(n.z, n.x) / (2.0 * PI);
+          float v = 0.5 + asin(n.y) / PI;
+          return vec2(u, v);
+      }
+      
+      // Spherical Raymarch to check if there is an island blocking the path between origin and current wave front
+      float getPathBlockage(vec3 start, vec3 end) {
+          float dist = distance(start, end);
+          if (dist < 0.2) return 1.0; // Base case, too close to be blocked
+          
+          float b = 0.0;
+          // Sample 4 points across the arc
+          for (float i = 0.2; i <= 0.8; i += 0.2) {
+              vec3 pStep = normalize(mix(start, end, i)) * 2.0; // Projected back to radius 2.0
+              float t = texture2D(topologyMap, getEquirectangularUV(pStep)).r;
+              b += step(0.04, t); // accumulation of land hits
+          }
+          // The more land is crossed, the closer to 0 the multiplier becomes
+          return clamp(1.0 - (b * 0.4), 0.0, 1.0);
+      }
+      
+      float getWaterHeight(vec3 p, float time, vec3 mainP) {
           // Ambient ocean bubbly layer
           float w1 = sin(p.x * 6.0 + time * 2.0) * cos(p.y * 6.0 + time * 1.5);
           float w2 = sin(p.y * 12.0 - time * 3.0) * cos(p.z * 12.0 + time * 2.0);
@@ -113,6 +171,7 @@ function RealCartoonEarth() {
               float t = time - uRippleTimes[i];
               // Ripple lives for 10 seconds to allow decay
               if (t > 0.0 && t < 10.0) { 
+                   // dist is the actual distance to the wave, evaluating the slope dynamically
                   float dist = distance(p, uRipples[i]);
                   float speed = 1.5; // Ripple expanding speed
                   float currentRadius = t * speed;
@@ -124,9 +183,16 @@ function RealCartoonEarth() {
                   float ringDist = abs(dist - currentRadius);
                   float frontMask = smoothstep(0.4, 0.0, ringDist); 
                   
-                  // High frequency sin wave forming the ripple - amplitude reduced heavily for extreme subtlety
-                  float rWave = sin((dist - currentRadius) * 13.0) * damping * 0.010;
-                  ripple += rWave * frontMask;
+                  // Optimization & Stability: ONLY run the expensive raymarch if this vertex is actively displaced.
+                  // We use mainP for the blockage check so that normal-map finite differences (pT, pB) don't jitter!
+                  if (frontMask > 0.01) {
+                      float blockageMult = getPathBlockage(uRipples[i], mainP);
+                      damping *= blockageMult;
+                      
+                      // High frequency sin wave forming the ripple - amplitude reduced heavily for extreme subtlety
+                      float rWave = sin((dist - currentRadius) * 13.0) * damping * 0.010;
+                      ripple += rWave * frontMask;
+                  }
               }
           }
           return baseWave + ripple;
@@ -148,12 +214,15 @@ function RealCartoonEarth() {
       // Compute true surface normals only for the water so we don't distort standard land
       // This is crucial for Volumetric lighting reflections!
       if (mask < 0.1) {
-          waterHeight = getWaterHeight(position, uTime);
+          waterHeight = getWaterHeight(position, uTime, position);
           
           float epsilon = 0.01;
-          vec3 tangent = normalize(cross(vec3(0.0, 1.0, 0.0), position));
-          // Avoid singularity at poles
-          if (length(tangent) < 0.001) tangent = normalize(cross(vec3(1.0, 0.0, 0.0), position));
+          vec3 tmpTangent = cross(vec3(0.0, 1.0, 0.0), position);
+          // Avoid singularity (NaN) at the exact North and South poles before normalizing
+          if (length(tmpTangent) < 0.001) {
+              tmpTangent = cross(vec3(1.0, 0.0, 0.0), position);
+          }
+          vec3 tangent = normalize(tmpTangent);
           vec3 bitangent = normalize(cross(position, tangent));
           
           // Sample neighbours exactly on the sphere surface shell (radius 2.0)
@@ -162,9 +231,9 @@ function RealCartoonEarth() {
           vec3 pB = position + bitangent * epsilon;
           pB = normalize(pB) * length(position); // Pin to surface
           
-          // Re-evaluate wave height at neighbour points
-          float hT = getWaterHeight(pT, uTime);
-          float hB = getWaterHeight(pB, uTime);
+          // Re-evaluate wave height at neighbour points using 'position' as macro-blockage anchor to prevent shadow acne!
+          float hT = getWaterHeight(pT, uTime, position);
+          float hB = getWaterHeight(pB, uTime, position);
           
           // Find actual displaced world points
           vec3 newP = position + normalize(position) * waterHeight;

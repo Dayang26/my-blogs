@@ -110,7 +110,7 @@ function RealCartoonEarth() {
        
        const localPoint = e.object.worldToLocal(hit.point.clone());
        const idx = rippleIndex.current;
-       uniforms.uRipples.value[idx].copy(localPoint);
+       uniforms.uRipples.value[idx]!.copy(localPoint);
        uniforms.uRippleTimes.value[idx] = uniforms.uTime.value;
        rippleIndex.current = (idx + 1) % maxRipples;
     }

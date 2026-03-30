@@ -5,22 +5,98 @@ import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
+export type WeatherType = 'white' | 'dark' | 'storm';
+
+function RainSystem({ r, type }: { r: number; type: WeatherType }) {
+  const count = 40;
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  
+  const drops = useMemo(() => {
+    return Array.from({ length: count }, () => ({
+      // Spawn strictly underneath the cloud base (cloud width is around 0.4)
+      x: -0.05 - Math.random() * (r - 2.0), // from cloud base all the way to earth surface
+      y: (Math.random() - 0.5) * 0.4, // narrowed lateral spread to only fall from the belly
+      z: (Math.random() - 0.5) * 0.4,
+      speed: 0.02 + Math.random() * 0.03
+    }));
+  }, [count, r]);
+
+  useFrame(() => {
+    if (type !== 'storm' || !meshRef.current) return;
+    drops.forEach((drop, i) => {
+      drop.x -= drop.speed;
+      // If it falls below the cloud base towards the earth surface (-r + 2.0 is the earth surface)
+      if (drop.x < -r + 2.0) {
+        drop.x = -0.05 - Math.random() * 0.1; // Loop back exactly to the lower belly of the cloud
+      }
+      dummy.position.set(drop.x, drop.y, drop.z);
+      dummy.rotation.z = Math.PI / 2; // Point cylinder along the fall axis (X)
+      // squash slightly to make them look like motion-blurred lines
+      dummy.scale.set(1, 4, 1);
+      dummy.updateMatrix();
+      meshRef.current!.setMatrixAt(i, dummy.matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  if (type !== 'storm') return null;
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} >
+      <cylinderGeometry args={[0.003, 0.003, 0.05, 4]} />
+      <meshBasicMaterial color="#94a3b8" transparent opacity={0.5} />
+    </instancedMesh>
+  );
+}
+
+function LightningSystem({ type }: { type: WeatherType }) {
+  const lightRef = useRef<THREE.PointLight>(null);
+  const nextFlash = useRef(0);
+  
+  useFrame((state) => {
+    if (type !== 'storm' || !lightRef.current) return;
+    const now = state.clock.elapsedTime;
+    
+    // Dim down fast
+    if (lightRef.current.intensity > 0) {
+        lightRef.current.intensity = THREE.MathUtils.lerp(lightRef.current.intensity, 0, 0.2);
+    }
+    
+    // Strike!
+    if (now > nextFlash.current) {
+        lightRef.current.intensity = 10.0 + Math.random() * 5.0; // bright flash
+        nextFlash.current = now + 2.0 + Math.random() * 6.0; // Random interval 2-8 seconds
+        // multi-strike simulator
+        if (Math.random() > 0.5) {
+             setTimeout(() => {
+                 if (lightRef.current) lightRef.current.intensity = 8.0;
+             }, 100);
+        }
+    }
+  });
+
+  if (type !== 'storm') return null;
+
+  return (
+    <pointLight ref={lightRef} position={[0, 0.2, 0]} distance={3} intensity={0} decay={2} color="#c084fc" />
+  );
+}
+
 // --- Cartoon Cloud (High Poly / Smooth) ---
-function CloudGroup({ r = 3, scale = 1, speedX = 0, speedY = 0 }) {
+function CloudGroup({ r = 3, scale = 1, speedX = 0, speedY = 0, type = 'white' as WeatherType, color = '#ffffff' }) {
   const orbitGroupRef = useRef<THREE.Group>(null);
 
   const parts = useMemo(() => {
     const list = [];
-    // More parts for a fluffier, complex cumulus cloud
     const count = 4 + Math.floor(Math.random() * 4);
     for (let i = 0; i < count; i++) {
-      const pr = 0.15 + Math.random() * 0.2;
-      // Spread them wider horizontally and flatter vertically
-      const px = (Math.random() - 0.5) * 0.5;
-      const py = (Math.random() - 0.5) * 0.1;
-      const pz = (Math.random() - 0.5) * 0.5;
-      const scaleY = 0.5 + Math.random() * 0.4; // Squash them vertically
-      list.push({ pr, px, py, pz, scaleY });
+        const pr = 0.15 + Math.random() * 0.2;
+        const px = (Math.random() - 0.5) * 0.5;
+        const py = (Math.random() - 0.5) * 0.1;
+        const pz = (Math.random() - 0.5) * 0.5;
+        const scaleY = 0.5 + Math.random() * 0.4; // Squash them vertically
+        list.push({ pr, px, py, pz, scaleY });
     }
     return list;
   }, []);
@@ -33,6 +109,39 @@ function CloudGroup({ r = 3, scale = 1, speedX = 0, speedY = 0 }) {
   });
 
   const initRot = useMemo(() => [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI], []);
+  
+  const onBeforeCompile = useCallback((shader: any) => {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <common>',
+      `
+      #include <common>
+      varying float vAltitude;
+      `
+    ).replace(
+      '#include <begin_vertex>',
+      `
+      #include <begin_vertex>
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vAltitude = length(worldPos.xyz);
+      `
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <common>',
+      `
+      #include <common>
+      varying float vAltitude;
+      `
+    ).replace(
+      '#include <color_fragment>',
+      `
+      #include <color_fragment>
+      // Fake Volume Self-Shadowing: Bottom of the cloud (closer to Earth core r=2.0) is much darker
+      float ao = smoothstep(2.1, 2.5, vAltitude);
+      diffuseColor.rgb *= mix(0.15, 1.0, ao);
+      `
+    );
+  }, []);
 
   return (
     <group ref={orbitGroupRef} rotation={initRot as any}>
@@ -40,9 +149,18 @@ function CloudGroup({ r = 3, scale = 1, speedX = 0, speedY = 0 }) {
         {parts.map((p, i) => (
           <mesh key={i} position={[p.px, p.py, p.pz]} scale={[1, p.scaleY, 1]} castShadow receiveShadow>
             <sphereGeometry args={[p.pr, 32, 32]} />
-            <meshStandardMaterial color="#ffffff" roughness={1} flatShading={false} />
+            <meshStandardMaterial 
+                 color={color} 
+                 roughness={1} 
+                 flatShading={false} 
+                 onBeforeCompile={onBeforeCompile}
+                 side={THREE.FrontSide}
+            />
           </mesh>
         ))}
+        {/* Dynamic Weather Systems generated only for storms */}
+        <RainSystem r={r} type={type} />
+        <LightningSystem type={type} />
       </group>
     </group>
   );
@@ -329,12 +447,33 @@ function CartoonScene() {
   const rootRef = useRef<THREE.Group>(null);
   const numClouds = 25;
 
-  const cloudsData = useMemo(() => [...Array(numClouds)].map(() => ({
-    speedX: (Math.random() - 0.5) * 0.005,
-    speedY: (Math.random() - 0.5) * 0.005,
-    scale: 0.4 + Math.random() * 0.5,
-    r: 2.3 + Math.random() * 1.5 // brought clouds slightly closer since continents are lower
-  })), []);
+  const cloudsData = useMemo(() => [...Array(numClouds)].map(() => {
+    const randy = Math.random();
+    let type: WeatherType = 'white';
+    if (randy > 0.7) type = 'dark';
+    if (randy > 0.85) type = 'storm';
+
+    let color = '#ffffff';
+    if (type === 'white') {
+        const cRand = Math.random();
+        if (cRand > 0.8) color = '#e0f2fe';       // faint ice blue (ocean reflection)
+        else if (cRand > 0.6) color = '#e2e8f0';  // light grey sky tint
+        else if (cRand > 0.4) color = '#f8fafc';  // pearl white
+    } else if (type === 'dark') {
+        color = '#94a3b8';
+    } else {
+        color = '#334155';
+    }
+
+    return {
+      speedX: (Math.random() - 0.5) * 0.005,
+      speedY: (Math.random() - 0.5) * 0.005,
+      scale: 0.4 + Math.random() * 0.5,
+      r: 2.3 + Math.random() * 1.5, // brought clouds slightly closer since continents are lower
+      type,
+      color
+    };
+  }), []);
 
   return (
     <>
@@ -356,9 +495,9 @@ function CartoonScene() {
         <RealCartoonEarth />
       </group>
 
-      {/* Orbiting Clouds */}
+      {/* Orbiting Clouds with Dynamic Weather */}
       {cloudsData.map((d, i) => (
-        <CloudGroup key={i} r={d.r} scale={d.scale} speedX={d.speedX} speedY={d.speedY} />
+        <CloudGroup key={i} r={d.r} scale={d.scale} speedX={d.speedX} speedY={d.speedY} type={d.type} color={d.color} />
       ))}
     </>
   );

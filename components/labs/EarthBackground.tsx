@@ -2,7 +2,7 @@
 
 import { Suspense, useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Billboard, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 export type WeatherType = 'white' | 'dark' | 'storm';
@@ -80,6 +80,72 @@ function LightningSystem({ type }: { type: WeatherType }) {
 
   return (
     <pointLight ref={lightRef} position={[0, 0.2, 0]} distance={3} intensity={0} decay={2} color="#c084fc" />
+  );
+}
+
+const CAPITALS = [
+  { name: 'Beijing', lat: 39.9042, lon: 116.4074 },
+  { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
+  { name: 'Washington D.C.', lat: 38.9072, lon: -77.0369 },
+  { name: 'London', lat: 51.5074, lon: -0.1278 },
+  { name: 'Paris', lat: 48.8566, lon: 2.3522 },
+  { name: 'Moscow', lat: 55.7558, lon: 37.6173 },
+  { name: 'Cairo', lat: 30.0444, lon: 31.2357 },
+  { name: 'Pretoria', lat: -25.7461, lon: 28.1881 },
+  { name: 'Brasília', lat: -15.8267, lon: -47.9218 },
+  { name: 'Buenos Aires', lat: -34.6037, lon: -58.3816 },
+  { name: 'Canberra', lat: -35.2809, lon: 149.1300 },
+  { name: 'New Delhi', lat: 28.6139, lon: 77.2090 },
+];
+
+function getCapitalPos(lat: number, lon: number, radius: number): [number, number, number] {
+  const latRad = lat * (Math.PI / 180);
+  const lonRad = lon * (Math.PI / 180);
+  
+  const y = radius * Math.sin(latRad);
+  const x = radius * Math.cos(latRad) * Math.cos(lonRad);
+  // Z axis must be inverted to mathematically align with the texture map's left-hand winding
+  const z = -radius * Math.cos(latRad) * Math.sin(lonRad); 
+  
+  return [x, y, z];
+}
+
+function CapitalMarkers() {
+  // Continents are extruded by exactly 0.06 where mask=1. Base sphere is 2. 
+  // 2 + 0.06 = 2.06. Adding 0.002 to perfectly stick it to the ground without depth-clipping.
+  const R = 2.062; 
+  return (
+    <group>
+      {CAPITALS.map((cap) => {
+        const pos = getCapitalPos(cap.lat, cap.lon, R);
+        return (
+          <group key={cap.name} position={pos}>
+            <Billboard follow={true} lockX={false} lockY={false} lockZ={false}>
+              {/* Outer hollow circle */}
+              <mesh>
+                <ringGeometry args={[0.012, 0.018, 32]} />
+                <meshBasicMaterial color="#000000" transparent opacity={0.7} depthWrite={false} />
+              </mesh>
+              {/* Inner hollow circle */}
+              <mesh>
+                <ringGeometry args={[0.003, 0.008, 16]} />
+                <meshBasicMaterial color="#000000" depthWrite={false} />
+              </mesh>
+              {/* Capital Name Text */}
+              <Text
+                position={[0, -0.035, 0]}
+                fontSize={0.035}
+                color="#000000"
+                outlineColor="#ffffff"
+                outlineWidth={0.008}
+              >
+                {cap.name}
+              </Text>
+            </Billboard>
+          </group>
+        );
+      })}
+    </group>
   );
 }
 
@@ -251,6 +317,7 @@ function RealCartoonEarth() {
       uniform float uRippleTimes[10];
       varying float vHeight;
       varying float vWave;
+      varying vec2 vMyUv;
       
       #define PI 3.141592653589793
       vec2 getEquirectangularUV(vec3 p) {
@@ -324,8 +391,10 @@ function RealCartoonEarth() {
       `
       #include <beginnormal_vertex>
       
+      vMyUv = uv;
       float topo = texture2D(topologyMap, uv).r;
-      float mask = smoothstep(0.01, 0.08, topo);
+      // Drastically lower the threshold so low-altitude plains (like Eastern China) aren't flooded!
+      float mask = smoothstep(0.002, 0.02, topo);
       
       float waterHeight = 0.0;
       
@@ -388,6 +457,8 @@ function RealCartoonEarth() {
       #include <common>
       varying float vHeight;
       varying float vWave;
+      varying vec2 vMyUv;
+      uniform sampler2D topologyMap;
       `
     );
 
@@ -403,18 +474,22 @@ function RealCartoonEarth() {
       vec3 landColor = vec3(0.13, 0.77, 0.37);  // Richer Green (#22c55e)
       vec3 edgeColor = vec3(0.98, 0.82, 0.30);  // Sandy beach color (#fcd34d)
       
-      vec3 finalColor = oceanBase;
-      // Adjusted thresholds for smoother color transitioning on the rounded edges
-      if (vHeight > 0.8) {
-          finalColor = landColor; 
-      } else if (vHeight > 0.1) {
-          finalColor = edgeColor; 
-      } else {
-          // Ocean logic: mix in the wave highlight based on wave height
-          // foam intensity scales up as the wave reaches its peak
-          float foam = smoothstep(0.0, 0.012, vWave);
-          finalColor = mix(oceanBase, waveHighlight, foam);
-      }
+      // Perfect pixel-level mask sampling for infinite resolution
+      float pixelTopo = texture2D(topologyMap, vMyUv).r;
+      // Ocean foam
+      float foam = smoothstep(0.0, 0.012, vWave);
+      vec3 oceanWithFoam = mix(oceanBase, waveHighlight, foam);
+      
+      // Create continuous masks for anti-aliasing the sub-pixel coastal gradient
+      // Ramps up from 0 to 1 rapidly at the absolute edge of non-zero pixels
+      float beachMask = smoothstep(0.000, 0.001, pixelTopo);
+      // Ramps up from beach to green land. 0.003 is < 1/255, ensuring ANY actual pixel data becomes 100% green land!
+      float landMask = smoothstep(0.001, 0.003, pixelTopo);
+      
+      vec3 colorOceanToBeach = mix(oceanBase, edgeColor, beachMask);
+      vec3 finalLandColor = mix(colorOceanToBeach, landColor, landMask);
+      
+      vec3 finalColor = mix(oceanWithFoam, finalLandColor, beachMask);
       
       diffuseColor.rgb = finalColor;
       `
@@ -429,8 +504,9 @@ function RealCartoonEarth() {
       rotation={[0, -Math.PI / 2, 0]}
       onPointerDown={handlePointerDown}
     >
+      <CapitalMarkers />
       {/* High-Poly Sphere to extremely smooth out the surface curves */}
-      <sphereGeometry args={[2, 256, 256]} />
+      <sphereGeometry args={[2, 512, 512]} />
       <meshPhysicalMaterial
         roughness={0.02}
         metalness={0.1}

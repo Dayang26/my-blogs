@@ -38,9 +38,9 @@ export default function LabsPage() {
           </Link>
         </header>
 
-        {/* Module Grid */}
-        <main className="flex flex-1 items-center justify-center px-8 pb-8 pointer-events-none">
-          <div className="grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 pointer-events-auto">
+        {/* Vertical Module List (Left Side) */}
+        <main className="flex flex-1 items-center justify-start px-8 pb-8 pointer-events-none">
+          <div className="flex w-80 flex-col gap-6 pointer-events-auto">
             {labModules.map((module) => (
               <LabCard key={module.id} module={module} />
             ))}

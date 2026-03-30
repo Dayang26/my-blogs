@@ -1,6 +1,6 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import type { CSSProperties } from 'react';
+import { HomeClient } from './home-client';
 
 type SpriteConfig = {
   cols: number;
@@ -77,20 +77,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="absolute right-8 top-1/2 flex -translate-y-1/2 flex-col gap-4">
-          <Link
-            href="/hand-3d"
-            className="border-2 border-cyan-200/90 bg-cyan-400/90 px-6 py-4 text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-950 shadow-[6px_6px_0px_rgba(14,116,144,0.8)] transition active:translate-x-1 active:translate-y-1 active:shadow-[3px_3px_0px_rgba(14,116,144,0.8)]"
-          >
-            进入试验区
-          </Link>
-          <Link
-            href="/blog"
-            className="border-2 border-slate-200/90 bg-slate-900/90 px-6 py-4 text-center text-sm font-bold uppercase tracking-[0.2em] text-slate-100 shadow-[6px_6px_0px_rgba(30,41,59,0.9)] transition active:translate-x-1 active:translate-y-1 active:shadow-[3px_3px_0px_rgba(30,41,59,0.9)]"
-          >
-            日志区域
-          </Link>
-        </div>
+        <HomeClient />
       </div>
     </div>
   );

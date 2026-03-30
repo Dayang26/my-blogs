@@ -7,88 +7,190 @@ import * as THREE from 'three';
 
 // --- Cartoon Cloud (High Poly / Smooth) ---
 function CloudGroup({ r = 3, scale = 1, speedX = 0, speedY = 0 }) {
-    const orbitGroupRef = useRef<THREE.Group>(null);
-    
-    const parts = useMemo(() => {
-       const list = [];
-       // More parts for a fluffier, complex cumulus cloud
-       const count = 4 + Math.floor(Math.random() * 4);
-       for (let i = 0; i < count; i++) {
-           const pr = 0.15 + Math.random() * 0.2; 
-           // Spread them wider horizontally and flatter vertically
-           const px = (Math.random() - 0.5) * 0.5;
-           const py = (Math.random() - 0.5) * 0.1; 
-           const pz = (Math.random() - 0.5) * 0.5;
-           const scaleY = 0.5 + Math.random() * 0.4; // Squash them vertically
-           list.push({ pr, px, py, pz, scaleY });
-       }
-       return list;
-    }, []);
+  const orbitGroupRef = useRef<THREE.Group>(null);
 
-    useFrame(() => {
-        if (orbitGroupRef.current) {
-            orbitGroupRef.current.rotation.x += speedX;
-            orbitGroupRef.current.rotation.y += speedY;
-        }
-    });
+  const parts = useMemo(() => {
+    const list = [];
+    // More parts for a fluffier, complex cumulus cloud
+    const count = 4 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < count; i++) {
+      const pr = 0.15 + Math.random() * 0.2;
+      // Spread them wider horizontally and flatter vertically
+      const px = (Math.random() - 0.5) * 0.5;
+      const py = (Math.random() - 0.5) * 0.1;
+      const pz = (Math.random() - 0.5) * 0.5;
+      const scaleY = 0.5 + Math.random() * 0.4; // Squash them vertically
+      list.push({ pr, px, py, pz, scaleY });
+    }
+    return list;
+  }, []);
 
-    const initRot = useMemo(() => [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI], []);
+  useFrame(() => {
+    if (orbitGroupRef.current) {
+      orbitGroupRef.current.rotation.x += speedX;
+      orbitGroupRef.current.rotation.y += speedY;
+    }
+  });
 
-    return (
-       <group ref={orbitGroupRef} rotation={initRot as any}>
-          <group position={[r, 0, 0]} scale={scale}>
-             {parts.map((p, i) => (
-                 <mesh key={i} position={[p.px, p.py, p.pz]} scale={[1, p.scaleY, 1]} castShadow receiveShadow>
-                     <sphereGeometry args={[p.pr, 32, 32]} /> 
-                     <meshStandardMaterial color="#ffffff" roughness={1} flatShading={false} />
-                 </mesh>
-             ))}
-          </group>
-       </group>
-    );
+  const initRot = useMemo(() => [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI], []);
+
+  return (
+    <group ref={orbitGroupRef} rotation={initRot as any}>
+      <group position={[r, 0, 0]} scale={scale}>
+        {parts.map((p, i) => (
+          <mesh key={i} position={[p.px, p.py, p.pz]} scale={[1, p.scaleY, 1]} castShadow receiveShadow>
+            <sphereGeometry args={[p.pr, 32, 32]} />
+            <meshStandardMaterial color="#ffffff" roughness={1} flatShading={false} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
 }
 
 // --- High Res Shader Earth ---
 function RealCartoonEarth() {
   const earthRef = useRef<THREE.Mesh>(null);
   const topologyMap = useLoader(THREE.TextureLoader, '/earth-topology.png');
+  const rippleIndex = useRef(0);
+  const maxRipples = 10;
 
   // Use useMemo to ensure uniform object reference remains stable
-  const uniforms = useMemo(() => ({
-    topologyMap: { value: topologyMap }
-  }), [topologyMap]);
+  const uniforms = useMemo(() => {
+    return {
+      topologyMap: { value: topologyMap },
+      uTime: { value: 0 },
+      uRipples: { value: Array.from({ length: maxRipples }, () => new THREE.Vector3(0, 0, 0)) },
+      uRippleTimes: { value: new Array(maxRipples).fill(-999.0) }
+    };
+  }, [topologyMap]);
+
+  // Update time for dynamic ocean waves
+  useFrame((state) => {
+    uniforms.uTime.value = state.clock.elapsedTime;
+  });
+
+  const handlePointerDown = (e: any) => {
+    e.stopPropagation(); // Only register the click for ripple, prevent bubbling
+    if (e.intersections && e.intersections.length > 0) {
+      // Get strict local coordinates on the sphere surface regardless of rotation
+      const localPoint = e.object.worldToLocal(e.point.clone());
+      const idx = rippleIndex.current;
+      uniforms.uRipples.value[idx].copy(localPoint);
+      uniforms.uRippleTimes.value[idx] = uniforms.uTime.value;
+      // Advance ring buffer
+      rippleIndex.current = (idx + 1) % maxRipples;
+    }
+  };
 
   const onBeforeCompile = useCallback((shader: any) => {
     shader.uniforms.topologyMap = uniforms.topologyMap;
-    
-    // Inject Uniforms and Varyings
+    shader.uniforms.uTime = uniforms.uTime;
+    shader.uniforms.uRipples = uniforms.uRipples;
+    shader.uniforms.uRippleTimes = uniforms.uRippleTimes;
+
+    // Inject Uniforms, Varyings, and Analytic Wave Function
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
       `
       #include <common>
       uniform sampler2D topologyMap;
+      uniform float uTime;
+      uniform vec3 uRipples[10];
+      uniform float uRippleTimes[10];
       varying float vHeight;
+      varying float vWave;
+      
+      float getWaterHeight(vec3 p, float time) {
+          // Ambient ocean bubbly layer
+          float w1 = sin(p.x * 6.0 + time * 2.0) * cos(p.y * 6.0 + time * 1.5);
+          float w2 = sin(p.y * 12.0 - time * 3.0) * cos(p.z * 12.0 + time * 2.0);
+          float baseWave = (w1 * 0.7 + w2 * 0.3) * 0.012; 
+          
+          // Accumulate interactive click ripples
+          float ripple = 0.0;
+          for (int i = 0; i < 10; i++) {
+              float t = time - uRippleTimes[i];
+              // Ripple lives for 10 seconds to allow decay
+              if (t > 0.0 && t < 10.0) { 
+                  float dist = distance(p, uRipples[i]);
+                  float speed = 1.5; // Ripple expanding speed
+                  float currentRadius = t * speed;
+                  
+                  // Spatial and temporal exponential decay
+                  float damping = exp(-dist * 1.5 - t * 0.6);
+                  
+                  // Limit the wave oscillation strictly to the expanding front region
+                  float ringDist = abs(dist - currentRadius);
+                  float frontMask = smoothstep(0.4, 0.0, ringDist); 
+                  
+                  // High frequency sin wave forming the ripple - amplitude reduced heavily for extreme subtlety
+                  float rWave = sin((dist - currentRadius) * 13.0) * damping * 0.010;
+                  ripple += rWave * frontMask;
+              }
+          }
+          return baseWave + ripple;
+      }
       `
     );
-    
-    // Extrude based on Topology Map
+
+    // Recalculate physical normals via analytical neighbours
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <beginnormal_vertex>',
+      `
+      #include <beginnormal_vertex>
+      
+      float topo = texture2D(topologyMap, uv).r;
+      float mask = smoothstep(0.01, 0.08, topo);
+      
+      float waterHeight = 0.0;
+      
+      // Compute true surface normals only for the water so we don't distort standard land
+      // This is crucial for Volumetric lighting reflections!
+      if (mask < 0.1) {
+          waterHeight = getWaterHeight(position, uTime);
+          
+          float epsilon = 0.01;
+          vec3 tangent = normalize(cross(vec3(0.0, 1.0, 0.0), position));
+          // Avoid singularity at poles
+          if (length(tangent) < 0.001) tangent = normalize(cross(vec3(1.0, 0.0, 0.0), position));
+          vec3 bitangent = normalize(cross(position, tangent));
+          
+          // Sample neighbours exactly on the sphere surface shell (radius 2.0)
+          vec3 pT = position + tangent * epsilon;
+          pT = normalize(pT) * length(position); // Pin to surface
+          vec3 pB = position + bitangent * epsilon;
+          pB = normalize(pB) * length(position); // Pin to surface
+          
+          // Re-evaluate wave height at neighbour points
+          float hT = getWaterHeight(pT, uTime);
+          float hB = getWaterHeight(pB, uTime);
+          
+          // Find actual displaced world points
+          vec3 newP = position + normalize(position) * waterHeight;
+          vec3 newPT = pT + normalize(pT) * hT;
+          vec3 newPB = pB + normalize(pB) * hB;
+          
+          // Recalculated exact normal of the wave slope
+          objectNormal = normalize(cross(newPT - newP, newPB - newP));
+      }
+      
+      vHeight = mask;
+      vWave = waterHeight; 
+      `
+    );
+
+    // Apply exact shape to transformed mesh
     shader.vertexShader = shader.vertexShader.replace(
       '#include <begin_vertex>',
       `
       #include <begin_vertex>
       
-      // Read elevation. Topology map has sea level close to 0
-      float topo = texture2D(topologyMap, uv).r;
+      // Calculate true extrusion with mask bleeding limits
+      // Shoreline damping: (1.0 - smoothstep(0.0, 0.1, vHeight)) prevents water waves from spilling over the land masks
+      float finalExtrusion = vHeight * 0.06 + vWave * (1.0 - smoothstep(0.0, 0.1, vHeight));
       
-      // We want a sharp plateau for land to get the blocky cartoon thickness
-      // Smoother transition to round off the edges of the landmasses
-      float mask = smoothstep(0.01, 0.08, topo);
-      
-      // Lowered the height of the continents relative to sea level for a more natural look
-      float extrusion = mask * 0.06; 
-      vHeight = mask; // pass to fragment shader for coloring
-      
-      transformed += normalize(objectNormal) * extrusion;
+      transformed += normalize(objectNormal) * finalExtrusion;
       `
     );
 
@@ -98,9 +200,10 @@ function RealCartoonEarth() {
       `
       #include <common>
       varying float vHeight;
+      varying float vWave;
       `
     );
-    
+
     // Colorize land and ocean based on extrusion height
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <color_fragment>',
@@ -108,16 +211,22 @@ function RealCartoonEarth() {
       #include <color_fragment>
       
       // Richer sea blue and greener land colors
-      vec3 oceanColor = vec3(0.01, 0.52, 0.78); 
-      vec3 landColor = vec3(0.13, 0.77, 0.37);  
+      vec3 oceanBase = vec3(0.01, 0.52, 0.78);  // Deeper Sea Blue (#0284c7)
+      vec3 waveHighlight = vec3(0.20, 0.75, 0.95); // Cyan highlight for wave peaks
+      vec3 landColor = vec3(0.13, 0.77, 0.37);  // Richer Green (#22c55e)
       vec3 edgeColor = vec3(0.98, 0.82, 0.30);  // Sandy beach color (#fcd34d)
       
-      vec3 finalColor = oceanColor;
+      vec3 finalColor = oceanBase;
       // Adjusted thresholds for smoother color transitioning on the rounded edges
       if (vHeight > 0.8) {
           finalColor = landColor; 
       } else if (vHeight > 0.1) {
           finalColor = edgeColor; 
+      } else {
+          // Ocean logic: mix in the wave highlight based on wave height
+          // foam intensity scales up as the wave reaches its peak
+          float foam = smoothstep(0.0, 0.012, vWave);
+          finalColor = mix(oceanBase, waveHighlight, foam);
       }
       
       diffuseColor.rgb = finalColor;
@@ -126,13 +235,21 @@ function RealCartoonEarth() {
   }, [uniforms]);
 
   return (
-    <mesh ref={earthRef} receiveShadow castShadow rotation={[0, -Math.PI / 2, 0]}>
-      {/* High-Poly Sphere to remove triangles completely */}
+    <mesh
+      ref={earthRef}
+      receiveShadow
+      castShadow
+      rotation={[0, -Math.PI / 2, 0]}
+      onPointerDown={handlePointerDown}
+    >
+      {/* High-Poly Sphere to extremely smooth out the surface curves */}
       <sphereGeometry args={[2, 256, 256]} />
-      <meshStandardMaterial 
-        roughness={0.6} 
-        metalness={0.1} 
-        onBeforeCompile={onBeforeCompile} 
+      <meshPhysicalMaterial
+        roughness={0.02}
+        metalness={0.1}
+        clearcoat={1.0}
+        clearcoatRoughness={0.15}
+        onBeforeCompile={onBeforeCompile}
       />
     </mesh>
   );
@@ -140,42 +257,42 @@ function RealCartoonEarth() {
 
 // --- Scene ---
 function CartoonScene() {
-    const rootRef = useRef<THREE.Group>(null);
-    const numClouds = 25;
+  const rootRef = useRef<THREE.Group>(null);
+  const numClouds = 25;
 
-    const cloudsData = useMemo(() => [...Array(numClouds)].map(() => ({
-       speedX: (Math.random() - 0.5) * 0.005,
-       speedY: (Math.random() - 0.5) * 0.005,
-       scale: 0.4 + Math.random() * 0.5,
-       r: 2.3 + Math.random() * 1.5 // brought clouds slightly closer since continents are lower
-    })), []);
+  const cloudsData = useMemo(() => [...Array(numClouds)].map(() => ({
+    speedX: (Math.random() - 0.5) * 0.005,
+    speedY: (Math.random() - 0.5) * 0.005,
+    scale: 0.4 + Math.random() * 0.5,
+    r: 2.3 + Math.random() * 1.5 // brought clouds slightly closer since continents are lower
+  })), []);
 
-    return (
-      <>
-        {/* Orbit Controls for Mouse Drag Rotation */}
-        <OrbitControls 
-            enableZoom={false} 
-            enablePan={false} 
-            autoRotate 
-            autoRotateSpeed={1.5} 
-            makeDefault 
-        />
+  return (
+    <>
+      {/* Orbit Controls for Mouse Drag Rotation */}
+      <OrbitControls
+        enableZoom={false}
+        enablePan={false}
+        autoRotate
+        autoRotateSpeed={1.5}
+        makeDefault
+      />
 
-        {/* Lights for vibrant cartoon look */}
-        <ambientLight intensity={1.5} />
-        <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} />
-        <directionalLight position={[-5, -5, -5]} intensity={0.6} color="#0284c7" />
+      {/* Lights for vibrant cartoon look */}
+      <ambientLight intensity={1.5} />
+      <directionalLight position={[5, 10, 5]} intensity={1.5} castShadow shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[-5, -5, -5]} intensity={0.6} color="#0284c7" />
 
-        <group ref={rootRef}>
-          <RealCartoonEarth />
-        </group>
+      <group ref={rootRef}>
+        <RealCartoonEarth />
+      </group>
 
-        {/* Orbiting Clouds */}
-        {cloudsData.map((d, i) => (
-           <CloudGroup key={i} r={d.r} scale={d.scale} speedX={d.speedX} speedY={d.speedY} />
-        ))}
-      </>
-    );
+      {/* Orbiting Clouds */}
+      {cloudsData.map((d, i) => (
+        <CloudGroup key={i} r={d.r} scale={d.scale} speedX={d.speedX} speedY={d.speedY} />
+      ))}
+    </>
+  );
 }
 
 export function EarthBackground() {

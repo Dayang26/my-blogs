@@ -8,6 +8,7 @@ import { getLanguageLabel } from '@/lib/blog-shared';
 const navLinks = [
   { href: '/labs', en: 'Enter Lab', zh: '进入试验区', primary: true },
   { href: '/blog', en: 'Blog', zh: '日志区域', primary: false },
+  { href: '/shop', en: 'Shop', zh: '积分商城', primary: false },
 ] as const;
 
 export function HomeClient() {

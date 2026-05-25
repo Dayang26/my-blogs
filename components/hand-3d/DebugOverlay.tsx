@@ -2,7 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import type { HandState, NormalizedLandmarkList } from '@/types/hand-tracking';
-import { LandmarkIndex } from '@/types/hand-tracking';
+import { LandmarkIndex, HAND_CONNECTIONS } from '@/types/hand-tracking';
 
 interface DebugOverlayProps {
     videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -10,22 +10,6 @@ interface DebugOverlayProps {
     fps: number;
     isLoading: boolean;
 }
-
-// 手部骨架连接定义
-const HAND_CONNECTIONS = [
-    // 拇指
-    [0, 1], [1, 2], [2, 3], [3, 4],
-    // 食指
-    [0, 5], [5, 6], [6, 7], [7, 8],
-    // 中指
-    [0, 9], [9, 10], [10, 11], [11, 12],
-    // 无名指
-    [0, 13], [13, 14], [14, 15], [15, 16],
-    // 小指
-    [0, 17], [17, 18], [18, 19], [19, 20],
-    // 手掌横向连接
-    [5, 9], [9, 13], [13, 17],
-];
 
 /**
  * 调试覆盖层组件
@@ -60,8 +44,8 @@ export function DebugOverlay({ videoRef, handState, fps, isLoading }: DebugOverl
         ctx.lineWidth = 2;
 
   HAND_CONNECTIONS.forEach(([start, end]) => {
-    const p1 = landmarks[start as LandmarkIndex];
-    const p2 = landmarks[end as LandmarkIndex];
+    const p1 = landmarks[start];
+    const p2 = landmarks[end];
     if (!p1 || !p2) return;
 
     ctx.beginPath();

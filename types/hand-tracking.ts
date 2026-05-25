@@ -1,6 +1,19 @@
 // 手势追踪相关类型定义
 
 /**
+ * 手部骨架连接定义 (21 个 landmarks 之间的连线)
+ * 每个元素为 [start, end] landmark 索引对
+ */
+export const HAND_CONNECTIONS: readonly [number, number][] = [
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  [0, 5], [5, 6], [6, 7], [7, 8],
+  [0, 9], [9, 10], [10, 11], [11, 12],
+  [0, 13], [13, 14], [14, 15], [15, 16],
+  [0, 17], [17, 18], [18, 19], [19, 20],
+  [5, 9], [9, 13], [13, 17],
+] as const;
+
+/**
  * 手势类型枚举
  */
 export type GestureType = 'NONE' | 'OPEN' | 'PINCH' | 'FIST' | 'POINT';

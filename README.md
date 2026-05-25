@@ -28,29 +28,30 @@
 3.  **访问**:
     -   开发环境: `http://localhost:3000`
 
-## 📚 目录结构概览 (核心)
+## 📚 目录结构
 
 ```
-app/
-  blog/                     # 博客相关页面
-  page.tsx                  # 网站首页
-components/                 # 通用 React 组件
-hooks/                      # 自定义 React Hooks
-lib/                        # 工具函数、配置等
-types/                      # TypeScript 类型定义
-content/posts/              # 博客文章 MDX 源文件
-public/                     # 静态资源 (图片、字体等)
+my-blogs/
+├── app/                    # Next.js App Router 页面
+│   ├── blog/               # 博客列表和文章详情
+│   ├── logs/               # 日志页 (重定向到 /blog)
+│   ├── layout.tsx          # 根布局
+│   ├── page.tsx            # 首页
+│   └── globals.css         # 全局样式
+├── components/             # React 组件
+├── content/posts/          # 博客文章 MDX 源文件
+├── hooks/                  # 自定义 React Hooks
+├── lib/                    # 工具函数和配置
+├── types/                  # TypeScript 类型定义
+└── public/                 # 静态资源
 ```
 
 ## ⚠️ 注意事项
 
--   博客文章需要同时提供 `zh.mdx` 和 `en.mdx` 文件以支持双语。
+-   博客文章需要同时提供 `zh.mdx` 和 `en.mdx` 文件以支持双语
+-   `/logs` 和 `/hand-3d` 分别为重定向页面
 
 ## 📖 更多文档
 
--   **项目架构**: 详细的项目结构与模块设计。
+-   **项目架构**: 详细的项目结构与模块设计
     -   [docs/architecture.md](docs/architecture.md)
--   **代码审查报告**: 识别出的潜在问题和改进建议。
-    -   [docs/code-review.md](docs/code-review.md)
--   **主页重构设计**: 主页最新设计方案。
-    -   [docs/homepage-redesign-arch.md](docs/homepage-redesign-arch.md)

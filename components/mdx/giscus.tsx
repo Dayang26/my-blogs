@@ -32,13 +32,18 @@ export function Giscus({
   lang = 'zh-CN',
 }: GiscusProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const scriptInitedRef = useRef(false);
 
   useEffect(() => {
-    const existingScript = document.querySelector('script[src="https://giscus.app/client.js"]');
-    if (existingScript) {
-      existingScript.remove();
+    if (scriptInitedRef.current) {
+      // 主题或语言变化时通过 giscus API 更新，避免重建 iframe
+      if (window.giscus) {
+        window.location.reload();
+      }
+      return;
     }
 
+    scriptInitedRef.current = true;
     const script = document.createElement('script');
     script.src = 'https://giscus.app/client.js';
     script.setAttribute('data-repo', repo);
@@ -56,6 +61,7 @@ export function Giscus({
 
     return () => {
       script.remove();
+      scriptInitedRef.current = false;
     };
   }, [repo, repoId, category, categoryId, mapping, term, theme, lang]);
 

@@ -47,9 +47,13 @@ export function useCamera(config?: CameraConfig): UseCameraReturn {
                 // 等待视频加载完成
                 await new Promise<void>((resolve, reject) => {
                     if (videoRef.current) {
-                        videoRef.current.onloadedmetadata = () => {
-                            videoRef.current?.play();
-                            resolve();
+                        videoRef.current.onloadedmetadata = async () => {
+                            try {
+                                await videoRef.current?.play();
+                                resolve();
+                            } catch (e) {
+                                reject(e);
+                            }
                         };
                         videoRef.current.onerror = () => {
                             reject(new Error('视频加载失败'));

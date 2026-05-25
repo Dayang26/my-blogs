@@ -30,7 +30,7 @@ const postI18n = defineCollection({
     metadata: s.metadata(),
   }).transform((data, { meta }) => {
     const parts = meta.path.split('/');
-    const lang = parts[parts.length - 1].replace('.mdx', '') as 'zh' | 'en';
+    const lang = parts[parts.length - 1]!.replace('.mdx', '') as 'zh' | 'en';
     return { ...data, slug: parts[parts.length - 2], lang, readMinutes: Math.max(1, Math.round(data.metadata.readingTime || 1)) };
   }),
 });

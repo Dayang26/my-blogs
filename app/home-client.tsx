@@ -19,7 +19,7 @@ export function HomeClient({ posts }: HomeClientProps) {
         </h1>
         <div className="h-px w-[120px] bg-[var(--border)] mt-8 mb-6" />
         <p className="font-sans text-base italic text-[var(--text-secondary)] animate-fade-in" style={{ animationDelay: '100ms' }}>
-          一个关于手势追踪、3D 交互与前端开发的个人博客
+          Personality begins where comparison ends.
         </p>
         <p className="mt-2 font-sans text-sm font-medium text-[var(--text-muted)] animate-fade-in" style={{ animationDelay: '150ms' }}>
           Aaron Hu

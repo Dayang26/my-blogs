@@ -30,7 +30,8 @@ const postI18n = defineCollection({
     metadata: s.metadata(),
   }).transform((data, { meta }) => {
     const parts = meta.path.split('/');
-    return { ...data, slug: parts[parts.length - 2], lang: parts[parts.length - 1] as 'zh' | 'en', readMinutes: Math.max(1, Math.round(data.metadata.readingTime || 1)) };
+    const lang = parts[parts.length - 1].replace('.mdx', '') as 'zh' | 'en';
+    return { ...data, slug: parts[parts.length - 2], lang, readMinutes: Math.max(1, Math.round(data.metadata.readingTime || 1)) };
   }),
 });
 
@@ -38,7 +39,6 @@ type I18nItem = {
   title: string;
   excerpt: string;
   readMinutes: number;
-  code: string;
   slug: string;
   lang: string;
 };
@@ -56,31 +56,30 @@ export default defineConfig({
     const i18nBySlug = new Map<string, { zh?: I18nItem; en?: I18nItem }>();
 
     for (const item of data.postI18n) {
-      const raw = item as unknown as Record<string, unknown>;
-      const filePath = String(raw.lang ?? '');
-      const normPath = filePath.replace(/\\/g, '/');
-      const name = normPath.split('/').pop() ?? '';
-      const code = (name === 'zh.mdx' ? 'zh' : name === 'en.mdx' ? 'en' : null) as 'zh' | 'en' | null;
-      const parts = normPath.split('/');
-      const slugIdx = Math.max(parts.indexOf('posts'), 0) + 1;
-      const slug = parts[slugIdx] ?? '';
+      // 这里的 item 已经经过 transform，可以直接访问 slug 和 lang
+      const lang = item.lang;
+      const slug = item.slug;
 
-      if (!code || !slug) continue;
+      if (!lang || !slug) {
+        // console.log(`Skipping i18n item due to missing lang or slug: ${item.meta.path}`);
+        continue;
+      }
+      // console.log(`Processing i18n: slug=${slug}, lang=${lang}, item.code=${item.code ? 'defined' : 'undefined'}`);
 
       const entry: I18nItem = {
-        title: String(raw.title ?? ''),
-        excerpt: String(raw.excerpt ?? ''),
-        readMinutes: typeof raw.readMinutes === 'number' ? raw.readMinutes : Math.max(1, Math.round(((raw.metadata as Record<string, number>)?.readingTime ?? 1))),
-        code: String(raw.code ?? ''),
+        title: item.title,
+        excerpt: item.excerpt,
+        readMinutes: item.readMinutes,
         slug,
-        lang: code,
+        lang,
       };
 
       const existing = i18nBySlug.get(slug) ?? {};
-      if (code === 'zh') existing.zh = entry;
-      if (code === 'en') existing.en = entry;
+      if (lang === 'zh') existing.zh = entry;
+      if (lang === 'en') existing.en = entry;
       i18nBySlug.set(slug, existing);
     }
+    // console.log(`i18nBySlug size: ${i18nBySlug.size}`);
 
     const published: Array<{
       slug: string;
@@ -95,8 +94,12 @@ export default defineConfig({
     }> = [];
 
     for (const dirName of allDirs) {
+      // console.log(`Processing directory: ${dirName}`);
       const metaPath = path.join(contentDir, dirName, 'meta.json');
-      if (!existsSync(metaPath)) continue;
+      if (!existsSync(metaPath)) {
+        // console.log(`  Skipping ${dirName}: meta.json not found`);
+        continue;
+      }
 
       const metaRaw = await readFile(metaPath, 'utf8');
       const meta = JSON.parse(metaRaw) as {
@@ -108,10 +111,17 @@ export default defineConfig({
         status?: string;
       };
 
-      if (meta.status === 'draft') continue;
+      if (meta.status === 'draft') {
+        // console.log(`  Skipping ${dirName}: status is draft`);
+        continue;
+      }
 
       const i18n = i18nBySlug.get(dirName);
-      if (!i18n || (!i18n.zh && !i18n.en)) continue;
+      // console.log(`  i18n for ${dirName}: ${JSON.stringify(i18n)}`);
+      if (!i18n || (!i18n.zh && !i18n.en)) {
+        // console.log(`  Skipping ${dirName}: no valid i18n content (zh or en)`);
+        continue;
+      }
 
       published.push({
         slug: dirName,
@@ -124,6 +134,7 @@ export default defineConfig({
         zh: i18n.zh ?? null,
         en: i18n.en ?? null,
       });
+      // console.log(`  Added ${dirName} to published. Current published size: ${published.length}`);
     }
 
     published.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -182,8 +193,8 @@ export default defineConfig({
       type: post.type,
       status: post.status,
       i18n: {
-        zh: post.zh ? { title: post.zh.title, excerpt: post.zh.excerpt, readMinutes: post.zh.readMinutes, code: post.zh.code } : null,
-        en: post.en ? { title: post.en.title, excerpt: post.en.excerpt, readMinutes: post.en.readMinutes, code: post.en.code } : null,
+        zh: post.zh ? { title: post.zh.title, excerpt: post.zh.excerpt, readMinutes: post.zh.readMinutes } : null,
+        en: post.en ? { title: post.en.title, excerpt: post.en.excerpt, readMinutes: post.en.readMinutes } : null,
       },
     }));
 

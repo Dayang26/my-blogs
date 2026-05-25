@@ -8,7 +8,7 @@ export function Footer() {
         <span className="hidden md:inline">·</span>
         <span className="italic">Personality begins where comparison ends.</span>
         <span className="hidden md:inline">·</span>
-        <span>Aaron Hu · flyhsyy@gmail.com</span>
+        <span>Aaron Hu · <a href="mailto:flyhsyy@gmail.com" className="transition-colors hover:text-[var(--accent)]">flyhsyy@gmail.com</a></span>
       </div>
     </footer>
   );

@@ -5,7 +5,7 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { createHandTracker, sendFrameToHands, MediaPipeResults } from '@/lib/hand-tracking/mediapipe';
 import { detectGesture } from '@/lib/hand-tracking/gesture-detector';
-import type { HandState, HandTrackingConfig, GestureState, NormalizedLandmarkList } from '@/types/hand-tracking';
+import type { HandState, HandTrackingConfig, GestureState, NormalizedLandmark, NormalizedLandmarkList } from '@/types/hand-tracking';
 
 const DEFAULT_GESTURE_STATE: GestureState = {
     type: 'NONE',
@@ -194,22 +194,32 @@ export function useHandTracking(
     };
 }
 
+const SMOOTHED_POOL: NormalizedLandmark[] = Array.from({ length: 21 }, () => ({ x: 0, y: 0, z: 0 }));
+
 function smoothLandmarks(
     current: NormalizedLandmarkList,
     previous: NormalizedLandmarkList | null,
     smoothing: number
 ): NormalizedLandmarkList {
     if (!previous || smoothing <= 0) {
-        return current.map((point) => ({ ...point }));
+        const pool: NormalizedLandmarkList = [];
+        for (let i = 0; i < current.length; i++) {
+            const p = current[i]!;
+            pool.push({ x: p.x, y: p.y, z: p.z });
+        }
+        return pool;
     }
 
     const t = 1 - smoothing;
-    return current.map((point, index) => {
-        const prev = previous[index] ?? point;
-        return {
-            x: prev.x + (point.x - prev.x) * t,
-            y: prev.y + (point.y - prev.y) * t,
-            z: prev.z + (point.z - prev.z) * t,
-        };
-    });
+    const pool: NormalizedLandmarkList = [];
+    for (let i = 0; i < current.length; i++) {
+        const p = current[i]!;
+        const prev = previous[i] ?? p;
+        const out = SMOOTHED_POOL[i]!;
+        out.x = prev.x + (p.x - prev.x) * t;
+        out.y = prev.y + (p.y - prev.y) * t;
+        out.z = prev.z + (p.z - prev.z) * t;
+        pool.push(out);
+    }
+    return pool;
 }

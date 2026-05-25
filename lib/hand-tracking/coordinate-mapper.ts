@@ -8,21 +8,27 @@ import type { CoordinateMapperConfig, Vector3D } from '@/types/hand-tracking';
 export function createCoordinateMapper(config: CoordinateMapperConfig) {
     const { sceneWidth, sceneHeight, sceneDepth, mirrorX } = config;
 
+    const targetVec = new THREE.Vector3();
+
     return {
         /**
          * 将 MediaPipe landmark 转换为 Three.js Vector3
          */
         mapLandmarkToWorld(landmark: Vector3D): THREE.Vector3 {
-            // x: 0-1 → -sceneWidth/2 到 sceneWidth/2
             const x = (landmark.x - 0.5) * sceneWidth * (mirrorX ? -1 : 1);
-
-            // y: 0-1 → -sceneHeight/2 到 sceneHeight/2 (翻转 Y 轴，因为屏幕坐标 y 向下)
             const y = (0.5 - landmark.y) * sceneHeight;
-
-            // z: MediaPipe z 是相对深度，负值表示靠近相机
             const z = -landmark.z * sceneDepth;
-
             return new THREE.Vector3(x, y, z);
+        },
+
+        /**
+         * 原地更新 Vector3 (避免分配新对象)
+         */
+        mapLandmarkToWorldInPlace(landmark: Vector3D, target: THREE.Vector3 = targetVec): THREE.Vector3 {
+            target.x = (landmark.x - 0.5) * sceneWidth * (mirrorX ? -1 : 1);
+            target.y = (0.5 - landmark.y) * sceneHeight;
+            target.z = -landmark.z * sceneDepth;
+            return target;
         },
 
         /**

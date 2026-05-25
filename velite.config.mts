@@ -187,7 +187,7 @@ export default defineConfig({
       },
     }));
 
-    const outputDir = path.resolve(context?.config.output.data ?? '.velite');
+    const outputDir = path.resolve(process.cwd(), '.velite');
     const publicDir = path.resolve('public');
 
     await mkdir(outputDir, { recursive: true });

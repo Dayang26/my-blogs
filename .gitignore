@@ -19,6 +19,7 @@
 .velite/
 public/static/
 public/searchIndex.json
+lib/__generated_posts.ts
 
 # production
 /build

@@ -1,19 +1,7 @@
 import { cache } from 'react';
 import type { CompositePost, PostListItem, SeriesGroup } from '@/types/blog';
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-function loadPosts(): CompositePost[] {
-  try {
-    const raw = readFileSync(join(process.cwd(), '.velite', 'compositePosts.json'), 'utf8');
-    return JSON.parse(raw) as CompositePost[];
-  } catch {
-    return [];
-  }
-}
-
-const allPosts = loadPosts();
+import allPosts from './__generated_posts';
 
 const publishedPosts = allPosts.filter((post) => post.status === 'published');
 

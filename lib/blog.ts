@@ -9,20 +9,11 @@ const sortedPosts = [...publishedPosts].sort(
   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 );
 
-export const blogPosts = sortedPosts;
-export const blogListPosts = sortedPosts;
+export const getBlogPosts = () => sortedPosts;
 
-export const getBlogPosts = () => blogPosts;
-export const getBlogListPosts = () => blogListPosts;
+export const getPostBySlug = (slug: string) => sortedPosts.find((post) => post.slug === slug);
 
-export const getPostBySlug = (slug: string) => blogPosts.find((post) => post.slug === slug);
-
-export const getFeaturedPosts = (posts = blogListPosts, limit = 3) =>
-  posts.filter((post) => post.featured).slice(0, limit);
-
-export const getLatestUpdateDate = (posts = blogListPosts) => posts[0]?.date ?? null;
-
-export const getTags = (posts = blogListPosts) => {
+export const getTags = (posts = sortedPosts) => {
   const counts = new Map<string, number>();
   posts.forEach((post) => {
     post.tags.forEach((tag: string) => {
@@ -34,7 +25,7 @@ export const getTags = (posts = blogListPosts) => {
     .map(([tag]) => tag);
 };
 
-export const getSeriesGroups = (posts = blogListPosts): SeriesGroup[] => {
+const getSeriesGroups = (posts = sortedPosts): SeriesGroup[] => {
   const map = new Map<string, PostListItem[]>();
   posts.forEach((post) => {
     if (!post.series) return;
@@ -56,13 +47,7 @@ export const getSeriesGroups = (posts = blogListPosts): SeriesGroup[] => {
     );
 };
 
-export const getChangelogPosts = (posts = blogListPosts, limit = 4) =>
-  posts.filter((post) => post.type === 'Changelog').slice(0, limit);
-
-export const getLabNotes = (posts = blogListPosts, limit = 4) =>
-  posts.filter((post) => post.type === 'LabNote').slice(0, limit);
-
-export const getAdjacentPosts = (slug: string, posts = blogListPosts) => {
+export const getAdjacentPosts = (slug: string, posts = sortedPosts) => {
   const index = posts.findIndex((post) => post.slug === slug);
   if (index === -1) return { prev: null, next: null };
   return {
@@ -71,7 +56,7 @@ export const getAdjacentPosts = (slug: string, posts = blogListPosts) => {
   };
 };
 
-export const getRelatedPosts = (slug: string, posts = blogListPosts, limit = 3) => {
+export const getRelatedPosts = (slug: string, posts = sortedPosts, limit = 3) => {
   const current = posts.find((post) => post.slug === slug);
   if (!current) return [];
 
@@ -88,17 +73,11 @@ export const getRelatedPosts = (slug: string, posts = blogListPosts, limit = 3) 
 };
 
 export const getBlogIndexData = cache(() => {
-  const posts = blogListPosts;
+  const posts = sortedPosts;
   return {
     posts,
     tags: ['All', ...getTags(posts)],
   };
 });
 
-export const getPostStats = cache(() => ({
-  total: blogListPosts.length,
-  tags: getTags().length,
-  series: getSeriesGroups().length,
-}));
-
-export { formatBlogDate, tagLabels } from './blog-shared';
+export { formatBlogDate } from './blog-shared';

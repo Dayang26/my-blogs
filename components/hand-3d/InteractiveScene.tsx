@@ -26,6 +26,7 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
 
     // 抓取状态
     const [grabbedObjectId, setGrabbedObjectId] = useState<string | null>(null);
+    const grabbedObjectIdRef = useRef<string | null>(null);
     const wasGrabbingRef = useRef(false);
 
     // 坐标映射器
@@ -35,7 +36,8 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
     const velocityTracker = useVelocityTracker(8);
 
     const renderHandPositions = useMemo(() => {
-        if (!handState.landmarks) {
+        const landmarks = handState.landmarks;
+        if (!landmarks) {
             return {
                 indexTip: null,
                 thumbTip: null,
@@ -43,7 +45,7 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
                 pinchCenter: null,
             };
         }
-        return mapHandPositions(handState.landmarks as NormalizedLandmarkList, mapper);
+        return mapHandPositions(landmarks, mapper);
     }, [handState.landmarks, mapper]);
 
     // 注册物体 ref
@@ -76,15 +78,11 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
         return nearestId;
     }, []);
 
-    // 每帧更新
+    // 每帧更新 (使用 useMemo 缓存的 renderHandPositions，避免重复创建 Vector3 对象)
     useFrame(() => {
-        // 更新手部位置
-        const positions = handState.landmarks
-            ? mapHandPositions(handState.landmarks as NormalizedLandmarkList, mapper)
-            : null;
+        const pinchCenter = renderHandPositions.pinchCenter;
 
         const isPinching = handState.gesture.type === 'PINCH' && handState.gesture.pinchStrength > 0.7;
-        const pinchCenter = positions?.pinchCenter ?? null;
 
         // 处理抓取逻辑
         if (isPinching && pinchCenter) {
@@ -96,12 +94,13 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
                     if (objRef) {
                         objRef.setKinematic(true);
                         setGrabbedObjectId(nearestId);
+                        grabbedObjectIdRef.current = nearestId;
                         velocityTracker.reset();
                     }
                 }
-            } else if (grabbedObjectId) {
-                // 持续抓取 - 移动物体
-                const objRef = objectRefs.current.get(grabbedObjectId);
+            } else if (grabbedObjectIdRef.current) {
+                // 持续抓取 - 移动物体 (useRef 避免闭包过期)
+                const objRef = objectRefs.current.get(grabbedObjectIdRef.current);
                 if (objRef) {
                     objRef.setPosition(pinchCenter);
                     velocityTracker.updatePosition(pinchCenter);
@@ -109,9 +108,9 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
             }
             wasGrabbingRef.current = true;
         } else {
-            if (wasGrabbingRef.current && grabbedObjectId) {
+            if (wasGrabbingRef.current && grabbedObjectIdRef.current) {
                 // 释放物体
-                const objRef = objectRefs.current.get(grabbedObjectId);
+                const objRef = objectRefs.current.get(grabbedObjectIdRef.current);
                 if (objRef) {
                     objRef.setKinematic(false);
 
@@ -124,6 +123,7 @@ export function InteractiveScene({ handState }: InteractiveSceneProps) {
                     }
                 }
                 setGrabbedObjectId(null);
+                grabbedObjectIdRef.current = null;
             }
             wasGrabbingRef.current = false;
         }

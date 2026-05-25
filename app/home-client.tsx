@@ -25,11 +25,8 @@ const uiText = {
     },
     stats: { posts: '篇文章', tags: '个标签', series: '个系列' },
     section: { recent: '最新文章', viewAll: '查看全部 →', quick: '快捷入口' },
-    quickLinks: [
-      { href: '/labs', title: '进入实验室', desc: '探索手势追踪与 3D 交互实验', icon: '🧪' },
-      { href: '/shop', title: '浏览商店', desc: '查看像素风格的虚拟商品', icon: '🏪' },
-    ],
-    nav: { blog: '博客', labs: '实验室', shop: '商店' },
+    quickLinks: [], // 移除快速链接
+    nav: { blog: '博客' }, // 只保留博客导航
     footer: '版权所有',
   },
   en: {
@@ -40,11 +37,8 @@ const uiText = {
     },
     stats: { posts: 'posts', tags: 'tags', series: 'series' },
     section: { recent: 'Recent Posts', viewAll: 'View All →', quick: 'Quick Access' },
-    quickLinks: [
-      { href: '/labs', title: 'Enter Lab', desc: 'Explore hand tracking & 3D experiments', icon: '🧪' },
-      { href: '/shop', title: 'Visit Shop', desc: 'Browse pixel-style virtual goods', icon: '🏪' },
-    ],
-    nav: { blog: 'Blog', labs: 'Labs', shop: 'Shop' },
+    quickLinks: [], // 移除快速链接
+    nav: { blog: 'Blog' }, // 只保留博客导航
     footer: 'All rights reserved',
   },
 };
@@ -103,8 +97,6 @@ export function HomeClient({ posts, stats }: HomeClientProps) {
           <nav className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-3 text-xs font-mono uppercase tracking-[0.2em]">
               <Link href="/blog" className="pixel-chip px-3 py-2">{copy.nav.blog}</Link>
-              <Link href="/labs" className="pixel-chip px-3 py-2">{copy.nav.labs}</Link>
-              <Link href="/shop" className="pixel-chip px-3 py-2">{copy.nav.shop}</Link>
             </div>
             <div className="flex items-center rounded-lg border border-slate-700/50 bg-slate-900/50 p-0.5">
               {LANGS.map((option) => (
@@ -161,30 +153,6 @@ export function HomeClient({ posts, stats }: HomeClientProps) {
           </div>
         </section>
 
-        {/* ─── Quick Links ─── */}
-        <section className="flex flex-col gap-6 pb-12">
-          <h2 className="text-lg font-bold uppercase tracking-[0.15em]">
-            {copy.section.quick}
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {copy.quickLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="pixel-card group flex items-center gap-5 p-6"
-              >
-                <span className="text-3xl">{link.icon}</span>
-                <div>
-                  <div className="text-sm font-bold uppercase tracking-[0.1em] group-hover:text-cyan-100">
-                    {link.title}
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">{link.desc}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
         {/* ─── Footer ─── */}
         <footer className="mt-auto border-t border-white/10 py-8">
           <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-slate-500">
@@ -194,7 +162,6 @@ export function HomeClient({ posts, stats }: HomeClientProps) {
             <div className="flex gap-4">
               <Link href="/" className="hover:text-slate-300">Home</Link>
               <Link href="/blog" className="hover:text-slate-300">Blog</Link>
-              <Link href="/labs" className="hover:text-slate-300">Labs</Link>
             </div>
           </div>
         </footer>

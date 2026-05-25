@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HandTrack 3D",
-  description: "Real-time hand tracking with 3D physics interaction.",
+  title: "个人博客",
+  description: "一个关于前端开发、技术探索与个人成长的博客。",
 };
 
 export default function RootLayout({

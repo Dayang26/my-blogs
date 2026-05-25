@@ -1,7 +1,8 @@
 import { cache } from 'react';
-import type { PostListItem, SeriesGroup } from '@/types/blog';
+import type { CompositePost, PostListItem, SeriesGroup } from '@/types/blog';
 
-import allPosts from '../.velite/compositePosts.json';
+import allPostsRaw from '../.velite/compositePosts.json';
+const allPosts = allPostsRaw as CompositePost[];
 
 const publishedPosts = allPosts.filter((post) => post.status === 'published');
 

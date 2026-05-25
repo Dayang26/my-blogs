@@ -72,3 +72,8 @@ Ensure that all user-facing output is localized to Chinese, even if code identif
 are in English.
 
 **前端使用pnpm工具。**
+
+## 6. 项目上下文
+
+- **风格规范**: 本项目严格遵循包豪斯（Bauhaus）极简设计理念，注重留白、线性分割与清晰的排版层级。新增组件时请避免过度设计（如圆角、投影、边框填充），多利用 `1px` 线条和纯文字元素。
+- **构建输出**: 本项目使用 Next.js 的静态导出 (`output: export`) 功能。开发时请确保没有使用不支持静态导出的 API（如 `next/image` 的默认优化，或者动态服务器组件专属 API）。

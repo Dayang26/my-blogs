@@ -17,13 +17,12 @@ export const generateStaticParams = () =>
 export const generateMetadata = async ({ params }: PageProps): Promise<Metadata> => {
   const { slug } = await params;
   const post = getPostBySlug(slug);
-  const content = post?.i18n.zh ?? post?.i18n.en;
-  if (!content) {
-    return { title: 'Blog' };
+  if (!post) {
+    return { title: 'Blog — SnowLine' };
   }
   return {
-    title: content.title,
-    description: content.excerpt,
+    title: `${post.title} — SnowLine`,
+    description: post.excerpt,
   };
 };
 

@@ -8,11 +8,6 @@ export const giscusConfig = {
   category: process.env.NEXT_PUBLIC_GISCUS_CATEGORY || 'Announcements',
   categoryId: process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID || 'DIC_kwDOQ-qeB84C42Rc',
   mapping: 'pathname' as const,
-  theme: 'dark_dimmed',
+  theme: 'light',
   lang: 'zh-CN',
-};
-
-export const commentsUiText = {
-  zh: { comments: '评论' },
-  en: { comments: 'Comments' },
 };

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import type { CompositePost, PostListItem, SeriesGroup } from '@/types/blog';
+import type { PostListItem, SeriesGroup } from '@/types/blog';
 
 import postsData from './__generated_posts';
 
@@ -91,12 +91,7 @@ export const getBlogIndexData = cache(() => {
   const posts = blogListPosts;
   return {
     posts,
-    featured: getFeaturedPosts(posts),
-    series: getSeriesGroups(posts),
-    changelog: getChangelogPosts(posts),
-    labNotes: getLabNotes(posts),
     tags: ['All', ...getTags(posts)],
-    latestDate: getLatestUpdateDate(posts),
   };
 });
 
@@ -106,4 +101,4 @@ export const getPostStats = cache(() => ({
   series: getSeriesGroups().length,
 }));
 
-export { formatBlogDate, getLanguageLabel, tagLabels } from './blog-shared';
+export { formatBlogDate, tagLabels } from './blog-shared';

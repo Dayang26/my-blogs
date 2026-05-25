@@ -47,7 +47,7 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
   if (embedUrl) {
     return (
       <figure className="my-6">
-        <div className={`relative w-full ${aspectClass} overflow-hidden rounded-lg border-2 border-slate-600 bg-slate-900`}>
+        <div className={`relative w-full ${aspectClass} overflow-hidden rounded border border-[var(--border)] bg-[var(--code-bg)]`}>
           <iframe
             src={embedUrl}
             title={title ?? 'Embedded video'}
@@ -56,7 +56,7 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
             className="absolute inset-0 h-full w-full"
           />
         </div>
-        {title && <figcaption className="mt-2 text-center text-xs text-slate-400">{title}</figcaption>}
+        {title && <figcaption className="mt-2 text-center text-xs text-[var(--text-muted)]">{title}</figcaption>}
       </figure>
     );
   }
@@ -64,7 +64,7 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
   if (isFile) {
     return (
       <figure className="my-6">
-        <div className={`relative w-full ${aspectClass} overflow-hidden rounded-lg border-2 border-slate-600 bg-slate-900`}>
+        <div className={`relative w-full ${aspectClass} overflow-hidden rounded border border-[var(--border)] bg-[var(--code-bg)]`}>
           <video
             src={src}
             poster={poster}
@@ -75,14 +75,14 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
             <track kind="captions" />
           </video>
         </div>
-        {title && <figcaption className="mt-2 text-center text-xs text-slate-400">{title}</figcaption>}
+        {title && <figcaption className="mt-2 text-center text-xs text-[var(--text-muted)]">{title}</figcaption>}
       </figure>
     );
   }
 
   return (
-    <div className="my-6 rounded-lg border-2 border-red-600 bg-red-900/20 p-4 text-center text-sm text-red-300">
-      Unsupported video source: {src}
+    <div className="my-6 rounded border border-[var(--border)] bg-[var(--code-bg)] p-4 text-center text-sm text-[var(--text-secondary)]">
+      不支持的视频源: {src}
     </div>
   );
 }

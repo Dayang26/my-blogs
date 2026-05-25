@@ -1,7 +1,3 @@
-export type Lang = 'zh' | 'en';
-
-export const LANGS: Lang[] = ['zh', 'en'];
-
 export interface CompositePost {
   slug: string;
   date: string;
@@ -10,13 +6,6 @@ export interface CompositePost {
   featured: boolean;
   type: string;
   status: string;
-  i18n: {
-    zh: PostI18nLite | null;
-    en: PostI18nLite | null;
-  };
-}
-
-export interface PostI18nLite {
   title: string;
   excerpt: string;
   readMinutes: number;
@@ -34,7 +23,6 @@ export type SeriesGroup = {
 
 export interface SearchIndexItem {
   slug: string;
-  lang: string;
   title: string;
   excerpt: string;
   tags: string[];

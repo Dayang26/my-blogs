@@ -21,7 +21,7 @@ const posts = defineCollection({
 
 const postI18n = defineCollection({
   name: 'PostI18n',
-  pattern: 'posts/**/{zh,en}.mdx',
+  pattern: 'posts/**/zh.mdx',
   schema: s.object({
     title: s.string(),
     excerpt: s.string(),
@@ -30,8 +30,7 @@ const postI18n = defineCollection({
     metadata: s.metadata(),
   }).transform((data, { meta }) => {
     const parts = meta.path.split('/');
-    const lang = parts[parts.length - 1]!.replace('.mdx', '') as 'zh' | 'en';
-    return { ...data, slug: parts[parts.length - 2], lang, readMinutes: Math.max(1, Math.round(data.metadata.readingTime || 1)) };
+    return { ...data, slug: parts[parts.length - 2], readMinutes: Math.max(1, Math.round(data.metadata.readingTime || 1)) };
   }),
 });
 
@@ -40,48 +39,36 @@ type I18nItem = {
   excerpt: string;
   readMinutes: number;
   slug: string;
-  lang: string;
-  code: string; // 修复：添加 code 属性
+  code: string;
 };
 
 export default defineConfig({
   root: 'content',
   collections: { posts, postI18n },
-  prepare: async (data, context) => {
+  prepare: async (data) => {
     const contentDir = path.resolve('content/posts');
 
     const allDirs = readdirSync(contentDir, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
 
-    const i18nBySlug = new Map<string, { zh?: I18nItem; en?: I18nItem }>();
+    const i18nBySlug = new Map<string, I18nItem>();
 
     for (const item of data.postI18n) {
-      // 这里的 item 已经经过 transform，可以直接访问 slug 和 lang
-      const lang = item.lang;
       const slug = item.slug;
 
-      if (!lang || !slug) {
-        // console.log(`Skipping i18n item due to missing lang or slug: ${item.meta.path}`);
+      if (!slug) {
         continue;
       }
-      // console.log(`Processing i18n: slug=${slug}, lang=${lang}, item.code=${item.code ? 'defined' : 'undefined'}`);
 
-      const entry: I18nItem = {
+      i18nBySlug.set(slug, {
         title: item.title,
         excerpt: item.excerpt,
         readMinutes: item.readMinutes,
         slug,
-        lang,
-        code: item.code, // 添加 code 字段
-      };
-
-      const existing = i18nBySlug.get(slug) ?? {};
-      if (lang === 'zh') existing.zh = entry;
-      if (lang === 'en') existing.en = entry;
-      i18nBySlug.set(slug, existing);
+        code: item.code,
+      });
     }
-    // console.log(`i18nBySlug size: ${i18nBySlug.size}`);
 
     const published: Array<{
       slug: string;
@@ -91,15 +78,15 @@ export default defineConfig({
       featured: boolean;
       type: string;
       status: string;
-      zh: I18nItem | null;
-      en: I18nItem | null;
+      title: string;
+      excerpt: string;
+      readMinutes: number;
+      code: string;
     }> = [];
 
     for (const dirName of allDirs) {
-      // console.log(`Processing directory: ${dirName}`);
       const metaPath = path.join(contentDir, dirName, 'meta.json');
       if (!existsSync(metaPath)) {
-        // console.log(`  Skipping ${dirName}: meta.json not found`);
         continue;
       }
 
@@ -114,14 +101,11 @@ export default defineConfig({
       };
 
       if (meta.status === 'draft') {
-        // console.log(`  Skipping ${dirName}: status is draft`);
         continue;
       }
 
       const i18n = i18nBySlug.get(dirName);
-      // console.log(`  i18n for ${dirName}: ${JSON.stringify(i18n)}`);
-      if (!i18n || (!i18n.zh && !i18n.en)) {
-        // console.log(`  Skipping ${dirName}: no valid i18n content (zh or en)`);
+      if (!i18n) {
         continue;
       }
 
@@ -133,58 +117,28 @@ export default defineConfig({
         featured: meta.featured ?? false,
         type: meta.type ?? 'DeepDive',
         status: meta.status ?? 'published',
-        zh: i18n.zh ?? null,
-        en: i18n.en ?? null,
+        title: i18n.title,
+        excerpt: i18n.excerpt,
+        readMinutes: i18n.readMinutes,
+        code: i18n.code,
       });
-      // console.log(`  Added ${dirName} to published. Current published size: ${published.length}`);
     }
 
     published.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-    const searchIndex = published.flatMap((post) => {
-      const entries: Array<{
-        slug: string;
-        lang: string;
-        title: string;
-        excerpt: string;
-        tags: string[];
-        date: string;
-        readMinutes: number;
-        series: string | null;
-        featured: boolean;
-        searchText: string;
-      }> = [];
-
-      if (post.zh) {
-        entries.push({
-          slug: post.slug,
-          lang: 'zh',
-          title: post.zh.title,
-          excerpt: post.zh.excerpt,
-          tags: post.tags,
-          date: post.date,
-          readMinutes: post.zh.readMinutes,
-          series: post.series,
-          featured: post.featured,
-          searchText: [post.zh.title, post.zh.excerpt, ...post.tags].join(' ').toLowerCase(),
-        });
-      }
-      if (post.en) {
-        entries.push({
-          slug: post.slug,
-          lang: 'en',
-          title: post.en.title,
-          excerpt: post.en.excerpt,
-          tags: post.tags,
-          date: post.date,
-          readMinutes: post.en.readMinutes,
-          series: post.series,
-          featured: post.featured,
-          searchText: [post.en.title, post.en.excerpt, ...post.tags].join(' ').toLowerCase(),
-        });
-      }
-      return entries;
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const searchIndex = published.map((post) => {
+      return {
+        slug: post.slug,
+        title: post.title,
+        excerpt: post.excerpt,
+        tags: post.tags,
+        date: post.date,
+        readMinutes: post.readMinutes,
+        series: post.series,
+        featured: post.featured,
+        searchText: [post.title, post.excerpt, ...post.tags].join(' ').toLowerCase(),
+      };
+    });
 
     const compositePosts = published.map((post) => ({
       slug: post.slug,
@@ -194,10 +148,10 @@ export default defineConfig({
       featured: post.featured,
       type: post.type,
       status: post.status,
-      i18n: {
-        zh: post.zh ? { title: post.zh.title, excerpt: post.zh.excerpt, readMinutes: post.zh.readMinutes, code: post.zh.code } : null,
-        en: post.en ? { title: post.en.title, excerpt: post.en.excerpt, readMinutes: post.en.readMinutes, code: post.en.code } : null,
-      },
+      title: post.title,
+      excerpt: post.excerpt,
+      readMinutes: post.readMinutes,
+      code: post.code,
     }));
 
     const outputDir = path.resolve(process.cwd(), '.velite');

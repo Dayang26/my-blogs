@@ -35,7 +35,7 @@ export function CustomSelect({ value, onChange, options, className = '' }: Custo
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="pixel-chip flex min-w-[100px] items-center justify-between gap-2 px-3 py-2 text-xs font-bold uppercase tracking-[0.2em]"
+        className="flex min-w-[100px] items-center justify-between gap-2 border-b border-[var(--border)] px-1 py-1.5 font-sans text-sm font-medium text-[var(--text-primary)] transition-colors hover:text-[var(--accent)] outline-none"
       >
         <span>{selectedLabel}</span>
         <svg
@@ -49,7 +49,7 @@ export function CustomSelect({ value, onChange, options, className = '' }: Custo
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border-2 border-slate-600 bg-slate-900 shadow-lg">
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded bg-[var(--surface)] border border-[var(--border)] shadow-md">
           {options.map((option) => (
             <button
               key={option.value}
@@ -58,8 +58,8 @@ export function CustomSelect({ value, onChange, options, className = '' }: Custo
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-3 py-2 text-left text-xs font-bold uppercase tracking-[0.2em] transition hover:bg-slate-800 ${
-                value === option.value ? 'bg-slate-800 text-cyan-300' : 'text-slate-200'
+              className={`w-full px-3 py-2 text-left font-sans text-sm transition-colors hover:bg-[var(--bg)] ${
+                value === option.value ? 'text-[var(--accent)] font-medium' : 'text-[var(--text-secondary)]'
               }`}
             >
               {option.label}

@@ -1,23 +1,19 @@
-import type { Lang, PostEntity, PostListItem } from '@/types/blog';
 
-export const getI18n = <T extends PostEntity | PostListItem>(post: T, lang: Lang) =>
-  post.i18n[lang] ?? post.i18n.zh ?? post.i18n.en;
-
-export const tagLabels: Record<string, { zh: string; en: string }> = {
-  AI: { zh: 'AI', en: 'AI' },
-  Architecture: { zh: '系统架构', en: 'Architecture' },
-  Calibration: { zh: '标定', en: 'Calibration' },
-  Design: { zh: '设计', en: 'Design' },
-  Motion: { zh: '动效', en: 'Motion' },
-  Performance: { zh: '性能优化', en: 'Performance' },
-  Physics: { zh: '物理', en: 'Physics' },
-  Product: { zh: '产品', en: 'Product' },
-  Rambler: { zh: '碎碎念', en: 'Rambler' },
-  Release: { zh: '发布', en: 'Release' },
-  Rendering: { zh: '渲染', en: 'Rendering' },
-  Simulation: { zh: '仿真', en: 'Simulation' },
-  UI: { zh: '界面', en: 'UI' },
-  Vision: { zh: '计算机视觉', en: 'Vision' },
+export const tagLabels: Record<string, string> = {
+  AI: 'AI',
+  Architecture: '系统架构',
+  Calibration: '标定',
+  Design: '设计',
+  Motion: '动效',
+  Performance: '性能优化',
+  Physics: '物理',
+  Product: '产品',
+  Rambler: '碎碎念',
+  Release: '发布',
+  Rendering: '渲染',
+  Simulation: '仿真',
+  UI: '界面',
+  Vision: '计算机视觉',
 };
 
 export const formatBlogDate = (value?: string) => {
@@ -29,9 +25,7 @@ export const formatBlogDate = (value?: string) => {
   return `${date.getFullYear()}.${month}.${day}`;
 };
 
-export const getTagLabel = (tag: string, lang: Lang) => {
-  if (tag === 'All') return lang === 'zh' ? '全部' : 'All';
-  return tagLabels[tag]?.[lang] ?? tag;
+export const getTagLabel = (tag: string) => {
+  if (tag === 'All') return '全部';
+  return tagLabels[tag] ?? tag;
 };
-
-export const getLanguageLabel = (lang: Lang) => (lang === 'zh' ? '中文' : 'English');

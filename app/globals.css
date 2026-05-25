@@ -26,25 +26,6 @@ body {
     sans-serif;
 }
 
-.pixelated {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.sprite {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-@keyframes sprite-x {
-  from {
-    background-position-x: 0px;
-  }
-  to {
-    background-position-x: calc(-1 * var(--sprite-sheet-w));
-  }
-}
-
 .pixel-grid {
   background-image: linear-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px),
     linear-gradient(90deg, rgba(148, 163, 184, 0.12) 1px, transparent 1px);

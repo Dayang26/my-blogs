@@ -1,62 +1,16 @@
 import { cache } from 'react';
-import { posts as metaPosts, postI18n } from '../.velite';
-import type { Lang, PostEntity, PostI18n, PostI18nLite, PostListItem, SeriesGroup } from '@/types/blog';
+import type { PostListItem, SeriesGroup } from '@/types/blog';
 
-const buildI18nMap = () => {
-  const map = new Map<string, Partial<Record<Lang, PostI18n>>>();
-  for (const entry of postI18n) {
-    const lang = entry.lang.replace('.mdx', '') as Lang;
-    if (lang !== 'zh' && lang !== 'en') continue;
-    const slug = entry.slug;
-    if (!slug) continue;
-    const existing = map.get(slug) ?? {};
-    map.set(slug, { ...existing, [lang]: entry });
-  }
-  return map;
-};
+import allPosts from '../.velite/compositePosts.json';
 
-const getReadMinutes = (entry?: PostI18n) => {
-  if (!entry) return 0;
-  if (typeof entry.readMinutes === 'number') return entry.readMinutes;
-  const readingTime = entry.metadata?.readingTime ?? 1;
-  return Math.max(1, Math.round(readingTime));
-};
-
-const toI18nLite = (entry?: PostI18n): PostI18nLite | undefined => {
-  if (!entry) return undefined;
-  return {
-    title: entry.title,
-    excerpt: entry.excerpt,
-    readMinutes: getReadMinutes(entry),
-    code: entry.code,
-  };
-};
-
-const i18nBySlug = buildI18nMap();
-
-const mergedPosts: PostEntity[] = metaPosts
-  .filter((post) => post.slug)
-  .map((post) => ({
-    ...post,
-    i18n: i18nBySlug.get(post.slug!) ?? {},
-  }));
-
-const publishedPosts = mergedPosts.filter((post) => post.status === 'published');
+const publishedPosts = allPosts.filter((post) => post.status === 'published');
 
 const sortedPosts = [...publishedPosts].sort(
   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 );
 
-const listPosts: PostListItem[] = sortedPosts.map((post) => ({
-  ...post,
-  i18n: {
-    zh: toI18nLite(post.i18n.zh),
-    en: toI18nLite(post.i18n.en),
-  },
-}));
-
 export const blogPosts = sortedPosts;
-export const blogListPosts = listPosts;
+export const blogListPosts = sortedPosts;
 
 export const getBlogPosts = () => blogPosts;
 export const getBlogListPosts = () => blogListPosts;
@@ -71,7 +25,7 @@ export const getLatestUpdateDate = (posts = blogListPosts) => posts[0]?.date ?? 
 export const getTags = (posts = blogListPosts) => {
   const counts = new Map<string, number>();
   posts.forEach((post) => {
-    post.tags.forEach((tag) => {
+    post.tags.forEach((tag: string) => {
       counts.set(tag, (counts.get(tag) ?? 0) + 1);
     });
   });
@@ -124,25 +78,13 @@ export const getRelatedPosts = (slug: string, posts = blogListPosts, limit = 3) 
   const scored = posts
     .filter((post) => post.slug !== slug)
     .map((post) => {
-      const sharedTags = post.tags.filter((tag) => current.tags.includes(tag)).length;
+      const sharedTags = post.tags.filter((tag: string) => current.tags.includes(tag)).length;
       const seriesBoost = current.series && post.series === current.series ? 2 : 0;
       return { post, score: sharedTags + seriesBoost };
     })
     .sort((a, b) => b.score - a.score || new Date(b.post.date).getTime() - new Date(a.post.date).getTime());
 
   return scored.slice(0, limit).map(({ post }) => post);
-};
-
-export const getLanguageFallback = (post: PostListItem | PostEntity, lang: Lang) => {
-  const preferred = post.i18n[lang];
-  if (preferred) return preferred;
-  return post.i18n.zh ?? post.i18n.en;
-};
-
-export const getLanguagePair = (post: PostEntity, lang: Lang) => {
-  const preferred = post.i18n[lang];
-  if (preferred) return preferred;
-  return post.i18n.zh ?? post.i18n.en;
 };
 
 export const getBlogIndexData = cache(() => {

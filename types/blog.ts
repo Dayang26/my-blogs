@@ -2,27 +2,39 @@ export type Lang = 'zh' | 'en';
 
 export const LANGS: Lang[] = ['zh', 'en'];
 
-export type PostMeta = (typeof import('../.velite').posts)[number];
-export type PostI18n = (typeof import('../.velite').postI18n)[number];
+export interface CompositePost {
+  slug: string;
+  date: string;
+  tags: string[];
+  series: string | null;
+  featured: boolean;
+  type: string;
+  status: string;
+  i18n: {
+    zh: PostI18nLite | null;
+    en: PostI18nLite | null;
+  };
+}
 
-export type PostI18nLite = Pick<PostI18n, 'title' | 'excerpt' | 'readMinutes' | 'code'>;
+export interface PostI18nLite {
+  title: string;
+  excerpt: string;
+  readMinutes: number;
+  code: string;
+}
 
-export type PostEntity = PostMeta & {
-  i18n: Partial<Record<Lang, PostI18n>>;
-};
+export type PostEntity = CompositePost;
 
-export type PostListItem = Omit<PostEntity, 'i18n'> & {
-  i18n: Partial<Record<Lang, PostI18nLite>>;
-};
+export type PostListItem = CompositePost;
 
 export type SeriesGroup = {
   name: string;
   posts: PostListItem[];
 };
 
-export type SearchIndexItem = {
+export interface SearchIndexItem {
   slug: string;
-  lang: Lang;
+  lang: string;
   title: string;
   excerpt: string;
   tags: string[];
@@ -31,4 +43,4 @@ export type SearchIndexItem = {
   series?: string | null;
   featured?: boolean;
   searchText: string;
-};
+}

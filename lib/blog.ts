@@ -1,9 +1,9 @@
 import { cache } from 'react';
 import type { CompositePost, PostListItem, SeriesGroup } from '@/types/blog';
 
-import allPosts from './__generated_posts';
+import postsData from './__generated_posts';
 
-const publishedPosts = allPosts.filter((post) => post.status === 'published');
+const publishedPosts = postsData.filter((post) => post.status === 'published');
 
 const sortedPosts = [...publishedPosts].sort(
   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),

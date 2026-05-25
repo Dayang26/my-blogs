@@ -72,6 +72,7 @@ export default defineConfig({
         readMinutes: item.readMinutes,
         slug,
         lang,
+        code: item.code, // 添加 code 字段
       };
 
       const existing = i18nBySlug.get(slug) ?? {};
@@ -193,8 +194,8 @@ export default defineConfig({
       type: post.type,
       status: post.status,
       i18n: {
-        zh: post.zh ? { title: post.zh.title, excerpt: post.zh.excerpt, readMinutes: post.zh.readMinutes } : null,
-        en: post.en ? { title: post.en.title, excerpt: post.en.excerpt, readMinutes: post.en.readMinutes } : null,
+        zh: post.zh ? { title: post.zh.title, excerpt: post.zh.excerpt, readMinutes: post.zh.readMinutes, code: post.zh.code } : null,
+        en: post.en ? { title: post.en.title, excerpt: post.en.excerpt, readMinutes: post.en.readMinutes, code: post.en.code } : null,
       },
     }));
 

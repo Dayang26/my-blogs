@@ -71,10 +71,24 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
 
   useEffect(() => {
     let mounted = true;
+    const CACHE_KEY = 'blog-search-index';
+
+    // 先尝试从 localStorage 读取缓存
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const data = JSON.parse(cached) as SearchIndexItem[];
+        if (!mounted) return;
+        setIndexItems(data);
+        setIndexReady(true);
+      } catch { /* ignore */ }
+    }
+
     fetch('/searchIndex.json')
       .then((res) => (res.ok ? res.json() : Promise.reject(res.statusText)))
       .then((data: SearchIndexItem[]) => {
         if (!mounted) return;
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
         setIndexItems(data);
         setIndexReady(true);
       })
@@ -142,10 +156,12 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
           <div className="pixel-panel flex flex-col gap-3 px-4 py-3">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <input
+                id="blog-search"
                 type="search"
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); resetVisible(); }}
                 placeholder={copy.control.search}
+                aria-label={copy.control.search}
                 className="pixel-input w-full md:max-w-xs"
               />
               <div className="flex flex-wrap items-center gap-2">

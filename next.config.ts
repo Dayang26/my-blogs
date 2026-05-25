@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     compress: true,
     poweredByHeader: false,
 
-    // 4. 安全头 (用于静态导出，middleware 不可用)
+    // 4. 安全头 (静态导出时 Next.js 不会输出，部署时需要 Web 服务器配置)
     async headers() {
         return [
             {
@@ -39,7 +39,16 @@ const nextConfig: NextConfig = {
                     },
                     {
                         key: 'Permissions-Policy',
-                        value: 'camera=(), microphone=(), geolocation=()',
+                        value: 'microphone=(), geolocation=()',
+                    },
+                ],
+            },
+            {
+                source: '/labs/:path*',
+                headers: [
+                    {
+                        key: 'Permissions-Policy',
+                        value: 'camera=(self), microphone=(), geolocation=()',
                     },
                 ],
             },

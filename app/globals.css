@@ -80,6 +80,11 @@ body {
   border-color: rgba(125, 211, 252, 0.6);
 }
 
+.pixel-card:focus-visible {
+  outline: 2px solid rgba(103, 232, 249, 0.8);
+  outline-offset: 2px;
+}
+
 .pixel-chip {
   border: 2px solid rgba(226, 232, 240, 0.6);
   background: rgba(15, 23, 42, 0.8);
@@ -102,6 +107,11 @@ body {
   box-shadow: 3px 3px 0 rgba(14, 116, 144, 0.8);
 }
 
+.pixel-button:focus-visible {
+  outline: 2px solid rgba(165, 243, 252, 0.9);
+  outline-offset: 2px;
+}
+
 .pixel-button:active {
   transform: translate(1px, 1px);
   box-shadow: 2px 2px 0 rgba(14, 116, 144, 0.8);
@@ -111,6 +121,11 @@ body {
   border-color: rgba(103, 232, 249, 0.5);
   transform: translate(-1px, -1px);
   box-shadow: 2px 2px 0 rgba(103, 232, 249, 0.2);
+}
+
+.pixel-chip:focus-visible {
+  outline: 2px solid rgba(103, 232, 249, 0.8);
+  outline-offset: 2px;
 }
 
 .pixel-chip:active {
@@ -126,6 +141,11 @@ body {
   font-size: 0.875rem;
   font-family: var(--font-geist-mono);
   outline: none;
+}
+
+.pixel-input:focus-visible {
+  outline: 2px solid rgba(125, 211, 252, 0.6);
+  outline-offset: 1px;
 }
 
 .pixel-panel {

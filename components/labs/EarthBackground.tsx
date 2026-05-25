@@ -4,6 +4,8 @@ import { Suspense, useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { OrbitControls, Billboard, Text } from '@react-three/drei';
 import * as THREE from 'three';
+import type { WebGLProgramParametersWithUniforms } from 'three';
+import { CAPITALS } from '@/data/capitals';
 
 export type WeatherType = 'white' | 'dark' | 'storm';
 
@@ -83,21 +85,6 @@ function LightningSystem({ type }: { type: WeatherType }) {
   );
 }
 
-const CAPITALS = [
-  { name: 'Beijing', lat: 39.9042, lon: 116.4074 },
-  { name: 'Tokyo', lat: 35.6762, lon: 139.6503 },
-  { name: 'Washington D.C.', lat: 38.9072, lon: -77.0369 },
-  { name: 'London', lat: 51.5074, lon: -0.1278 },
-  { name: 'Paris', lat: 48.8566, lon: 2.3522 },
-  { name: 'Moscow', lat: 55.7558, lon: 37.6173 },
-  { name: 'Cairo', lat: 30.0444, lon: 31.2357 },
-  { name: 'Pretoria', lat: -25.7461, lon: 28.1881 },
-  { name: 'Brasília', lat: -15.8267, lon: -47.9218 },
-  { name: 'Buenos Aires', lat: -34.6037, lon: -58.3816 },
-  { name: 'Canberra', lat: -35.2809, lon: 149.1300 },
-  { name: 'New Delhi', lat: 28.6139, lon: 77.2090 },
-];
-
 function getCapitalPos(lat: number, lon: number, radius: number): [number, number, number] {
   const latRad = lat * (Math.PI / 180);
   const lonRad = lon * (Math.PI / 180);
@@ -174,9 +161,9 @@ function CloudGroup({ r = 3, scale = 1, speedX = 0, speedY = 0, type = 'white' a
     }
   });
 
-  const initRot = useMemo(() => [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI], []);
+  const initRot = useMemo(() => new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI), []);
   
-  const onBeforeCompile = useCallback((shader: any) => {
+  const onBeforeCompile = useCallback((shader: WebGLProgramParametersWithUniforms) => {
     shader.vertexShader = shader.vertexShader.replace(
       '#include <common>',
       `
@@ -210,7 +197,7 @@ function CloudGroup({ r = 3, scale = 1, speedX = 0, speedY = 0, type = 'white' a
   }, []);
 
   return (
-    <group ref={orbitGroupRef} rotation={initRot as any}>
+      <group ref={orbitGroupRef} rotation={initRot}>
       <group position={[r, 0, 0]} scale={scale}>
         {parts.map((p, i) => (
           <mesh key={i} position={[p.px, p.py, p.pz]} scale={[1, p.scaleY, 1]} castShadow receiveShadow>
@@ -300,7 +287,7 @@ function RealCartoonEarth() {
     }
   };
 
-  const onBeforeCompile = useCallback((shader: any) => {
+  const onBeforeCompile = useCallback((shader: WebGLProgramParametersWithUniforms) => {
     shader.uniforms.topologyMap = uniforms.topologyMap;
     shader.uniforms.uTime = uniforms.uTime;
     shader.uniforms.uRipples = uniforms.uRipples;

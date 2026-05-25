@@ -1,7 +1,6 @@
 import type {NextConfig} from "next";
 
 const nextConfig: NextConfig = {
-    /* config options here */
     // 1. 开启静态导出：生成纯 HTML/CSS/JS 到 out 文件夹
     output: 'export',
     distDir: 'out',
@@ -14,37 +13,6 @@ const nextConfig: NextConfig = {
     // 3. 性能优化
     compress: true,
     poweredByHeader: false,
-
-    // 4. 安全头 (静态导出时 Next.js 不会输出，部署时需要 Web 服务器配置)
-    async headers() {
-        return [
-            {
-                source: '/:path*',
-                headers: [
-                    {
-                        key: 'X-Content-Type-Options',
-                        value: 'nosniff',
-                    },
-                    {
-                        key: 'X-Frame-Options',
-                        value: 'DENY',
-                    },
-                    {
-                        key: 'X-XSS-Protection',
-                        value: '1; mode=block',
-                    },
-                    {
-                        key: 'Referrer-Policy',
-                        value: 'strict-origin-when-cross-origin',
-                    },
-                    {
-                        key: 'Permissions-Policy',
-                        value: 'microphone=(), geolocation=()',
-                    },
-                ],
-            },
-        ];
-    },
 };
 
 export default nextConfig;

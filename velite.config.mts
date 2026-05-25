@@ -41,6 +41,7 @@ type I18nItem = {
   readMinutes: number;
   slug: string;
   lang: string;
+  code: string; // 修复：添加 code 属性
 };
 
 export default defineConfig({

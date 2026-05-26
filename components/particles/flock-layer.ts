@@ -9,7 +9,7 @@ import {
   BufferAttribute,
   Points,
   ShaderMaterial,
-  AdditiveBlending,
+  NormalBlending,
   Scene,
 } from 'three'
 import type { ParticleConfig } from './config'
@@ -17,37 +17,78 @@ import type { AABB } from './dom-obstacles'
 
 const vertexShader = /* glsl */ `
   uniform float uPixelRatio;
+  uniform float uIdleProgress;
   attribute float aSize;
   attribute float aRandom;
+  attribute float aAngle;
   varying float vRandom;
+  varying float vAngle;
+  varying float vCapsule;
+  varying float vDepth;
 
   void main() {
     vRandom = aRandom;
+    vAngle = aAngle;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mvPosition;
-    gl_PointSize = aSize * 24.0 * uPixelRatio;
-    gl_PointSize *= 1.0 / -mvPosition.z;
+
+    float perspectiveScale = 6.0 / max(0.25, -mvPosition.z);
+    float baseSize = aSize * perspectiveScale * uPixelRatio;
+    float depth = smoothstep(-1.7, 1.45, position.z);
+    float idleSize = mix(1.0, aSize * 1.55, depth) * uPixelRatio;
+
+    vDepth = depth;
+    vCapsule = mix(1.0, depth, uIdleProgress);
+    gl_PointSize = mix(baseSize, idleSize, uIdleProgress);
   }
 `
 
 const fragmentShader = /* glsl */ `
+  uniform float uTime;
   uniform float uOpacity;
-  uniform vec3 uColorA;
-  uniform vec3 uColorB;
+  uniform float uSpectrumSpeed;
   varying float vRandom;
+  varying float vAngle;
+  varying float vCapsule;
+  varying float vDepth;
+
+  float capsuleSdf(vec2 p, float halfLen, float radius) {
+    p.x -= clamp(p.x, -halfLen, halfLen);
+    return length(p) - radius;
+  }
+
+  vec3 spectrum(float t) {
+    t = fract(t);
+
+    if (t < 0.12) {
+      return mix(vec3(0.42, 0.0, 0.0), vec3(1.0, 0.02, 0.0), t / 0.12);
+    } else if (t < 0.26) {
+      return mix(vec3(1.0, 0.02, 0.0), vec3(1.0, 0.72, 0.0), (t - 0.12) / 0.14);
+    } else if (t < 0.42) {
+      return mix(vec3(1.0, 0.72, 0.0), vec3(0.05, 0.9, 0.1), (t - 0.26) / 0.16);
+    } else if (t < 0.58) {
+      return mix(vec3(0.05, 0.9, 0.1), vec3(0.0, 0.72, 1.0), (t - 0.42) / 0.16);
+    } else if (t < 0.76) {
+      return mix(vec3(0.0, 0.72, 1.0), vec3(0.18, 0.08, 1.0), (t - 0.58) / 0.18);
+    }
+
+    return mix(vec3(0.18, 0.08, 1.0), vec3(0.62, 0.0, 0.95), (t - 0.76) / 0.24);
+  }
 
   void main() {
-    vec2 uv = gl_PointCoord - 0.5;
-    float d = length(uv);
+    vec2 p = gl_PointCoord - 0.5;
+    float c = cos(vAngle);
+    float s = sin(vAngle);
+    p = mat2(c, -s, s, c) * p;
 
-    // 更紧凑的光晕
-    float alpha = smoothstep(0.5, 0.02, d);
-    // 中心辉光
-    alpha += smoothstep(0.15, 0.0, d) * 0.4;
-    alpha *= uOpacity;
+    float halfLen = mix(0.0, 0.27, vCapsule);
+    float radius = mix(0.31, 0.205, vCapsule);
+    float d = capsuleSdf(p, halfLen, radius);
+    if (d > 0.0) discard;
 
-    vec3 color = mix(uColorA, uColorB, vRandom);
-    gl_FragColor = vec4(color, alpha);
+    float t = vRandom + gl_PointCoord.x * 0.36 + vDepth * 0.18 + uTime * uSpectrumSpeed;
+    vec3 color = spectrum(t);
+    gl_FragColor = vec4(color, uOpacity);
   }
 `
 
@@ -57,6 +98,8 @@ type Bird = {
   z: number
   vx: number
   vy: number
+  phase: number
+  angle: number
 }
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
@@ -82,16 +125,19 @@ export class FlockLayer {
   private geometry: BufferGeometry
   private birds: Bird[] = []
   private posAttr: BufferAttribute
+  private angleAttr: BufferAttribute
   private config: ParticleConfig['flock']
+  private elapsed = 0
 
   constructor(scene: Scene, config: ParticleConfig) {
     this.config = config.flock
-    const { count, sizeRange, colorCyan, colorMagenta, opacity } = this.config
+    const { count, sizeRange, opacity, spectrumSpeed } = this.config
 
     // 初始化鸟群
     const positions = new Float32Array(count * 3)
     const randoms = new Float32Array(count)
     const sizes = new Float32Array(count)
+    const angles = new Float32Array(count)
 
     for (let i = 0; i < count; i++) {
       // 初始位置集中在中心附近
@@ -99,32 +145,37 @@ export class FlockLayer {
       const x = slot.x + (Math.random() - 0.5) * 0.5
       const y = slot.y + (Math.random() - 0.5) * 0.5
       const z = (Math.random() - 0.5) * 0.5
+      const angle = Math.random() * Math.PI * 2
 
       positions[i * 3 + 0] = x
       positions[i * 3 + 1] = y
       positions[i * 3 + 2] = z
 
       randoms[i] = Math.random()
-      sizes[i] = sizeRange[0] / 20 + Math.random() * ((sizeRange[1] - sizeRange[0]) / 20)
+      sizes[i] = sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0])
+      angles[i] = angle
 
-      this.birds.push({ x, y, z, vx: 0, vy: 0 })
+      this.birds.push({ x, y, z, vx: 0, vy: 0, phase: Math.random(), angle })
     }
 
     this.geometry = new BufferGeometry()
     this.posAttr = new BufferAttribute(positions, 3)
+    this.angleAttr = new BufferAttribute(angles, 1)
     this.geometry.setAttribute('position', this.posAttr)
     this.geometry.setAttribute('aRandom', new BufferAttribute(randoms, 1))
     this.geometry.setAttribute('aSize', new BufferAttribute(sizes, 1))
+    this.geometry.setAttribute('aAngle', this.angleAttr)
 
     this.material = new ShaderMaterial({
       transparent: true,
       depthWrite: false,
-      blending: AdditiveBlending,
+      blending: NormalBlending,
       uniforms: {
         uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+        uTime: { value: 0 },
+        uIdleProgress: { value: 0 },
         uOpacity: { value: opacity },
-        uColorA: { value: colorCyan },
-        uColorB: { value: colorMagenta },
+        uSpectrumSpeed: { value: spectrumSpeed },
       },
       vertexShader,
       fragmentShader,
@@ -139,14 +190,22 @@ export class FlockLayer {
     anchorX: number,
     anchorY: number,
     anchorAngle: number,
+    idleTime: number,
     obstacles: AABB[]
   ) {
+    this.elapsed += dt
+
     const {
       maxSpeed, maxForce,
       seekWeight, separationWeight, separationRadius,
       alignmentWeight, alignmentRadius, arrivalRadius,
       obstacleWeight, slotSpacing,
+      idleStartDelay, idleRampDuration, idleCycleSpeed, idleZRange,
     } = this.config
+    const idleProgress = Math.min(
+      Math.max((idleTime - idleStartDelay) / idleRampDuration, 0),
+      1
+    )
 
     const cosA = Math.cos(anchorAngle)
     const sinA = Math.sin(anchorAngle)
@@ -252,13 +311,13 @@ export class FlockLayer {
         
         const dx = bird.x - cx
         const dy = bird.y - cy
-        let dist = Math.sqrt(dx * dx + dy * dy)
+        const dist = Math.sqrt(dx * dx + dy * dy)
         
         let nx = 0
         let ny = 0
         let strength = 0
         
-        const margin = 0.5 // 矩形外围的影响范围(世界坐标体系下)
+        const margin = 0.08 // 大幅降低力场影响范围，避免字母间的力场重叠成一堵墙
         
         if (dist < 0.001) {
           // 鸟在障碍物内部，强力排斥出最近边缘
@@ -273,7 +332,7 @@ export class FlockLayer {
           else if (minDist === dTop) ny = 1
           else ny = -1
           
-          strength = 2.0 // 极强的排斥力
+          strength = 4.0 // 极强的排斥力，防止高帧率穿模
         } else if (dist < margin) {
           nx = dx / dist
           ny = dy / dist
@@ -297,16 +356,27 @@ export class FlockLayer {
 
       bird.x += bird.vx * dt
       bird.y += bird.vy * dt
-      // z 轴微弱抖动
-      bird.z += Math.sin(bird.x * 2.0 + bird.y * 3.0) * 0.002
+      const zWave = Math.sin((this.elapsed * idleCycleSpeed + bird.phase) * Math.PI * 2) * 0.5 + 0.5
+      const targetZ = idleZRange[0] + (idleZRange[1] - idleZRange[0]) * zWave
+      const driftZ = Math.sin(bird.x * 2.0 + bird.y * 3.0 + bird.phase * 6.283) * 0.18
+      bird.z += ((targetZ - bird.z) * idleProgress + (driftZ - bird.z) * (1 - idleProgress)) * Math.min(dt * 3.5, 1)
+
+      const speed = Math.sqrt(bird.vx * bird.vx + bird.vy * bird.vy)
+      if (speed > 0.01) {
+        bird.angle = Math.atan2(bird.vy, bird.vx)
+      }
 
       // 写入 buffer
       this.posAttr.array[i * 3 + 0] = bird.x
       this.posAttr.array[i * 3 + 1] = bird.y
       this.posAttr.array[i * 3 + 2] = bird.z
+      this.angleAttr.array[i] = bird.angle
     }
 
     this.posAttr.needsUpdate = true
+    this.angleAttr.needsUpdate = true
+    this.material.uniforms.uTime!.value = this.elapsed
+    this.material.uniforms.uIdleProgress!.value = idleProgress
   }
 
   dispose() {

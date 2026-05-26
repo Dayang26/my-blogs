@@ -10,9 +10,12 @@ export type ParticleConfig = {
     sizeRange: [number, number]
     maxSpeed: number
     maxForce: number
-    colorCyan: [number, number, number]
-    colorMagenta: [number, number, number]
     opacity: number
+    spectrumSpeed: number
+    idleStartDelay: number
+    idleRampDuration: number
+    idleCycleSpeed: number
+    idleZRange: [number, number]
     slotSpacing: number
     seekWeight: number
     separationWeight: number
@@ -42,12 +45,15 @@ export function getConfig(): ParticleConfig | null {
     enabled: true,
     flock: {
       count: 300,
-      sizeRange: [10, 22],
-      maxSpeed: 4.0,
-      maxForce: 12.0,
-      colorCyan: [0.3, 0.7, 1.0],
-      colorMagenta: [0.9, 0.3, 0.8],
-      opacity: 0.7,
+      sizeRange: [20, 40],
+      maxSpeed: 7.0,
+      maxForce: 18.0,
+      opacity: 0.9,
+      spectrumSpeed: 0.08,
+      idleStartDelay: 0.35,
+      idleRampDuration: 1.1,
+      idleCycleSpeed: 0.16,
+      idleZRange: [-1.7, 1.45],
       slotSpacing: 0.18,
       seekWeight: 1.0,
       separationWeight: 1.8,

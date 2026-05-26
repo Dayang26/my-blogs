@@ -95,12 +95,18 @@ export function initRenderer(
     // 更新输入
     pointer.update(dt)
 
+    // 每帧强行更新相机世界矩阵，以保证 domObstacles 中 unproject 计算准确
+    camera.updateMatrixWorld()
+    // 每帧同步一次 DOM 的真实位置（应对字体加载、动画渲染带来的动态位移）
+    domObstacles.update()
+
     // 更新各层
     flockLayer.update(
       dt,
       pointer.anchorX,
       pointer.anchorY,
       pointer.angle,
+      pointer.idleTime,
       domObstacles.rects
     )
 

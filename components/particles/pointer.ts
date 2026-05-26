@@ -22,8 +22,14 @@ export class Pointer {
   /** 是否有鼠标活动 */
   active = false
 
+  /** 鼠标静止时长（秒） */
+  idleTime = 0
+
   private onMove: (e: MouseEvent) => void
   private onLeave: () => void
+  private movedThisFrame = false
+  private lastClientX: number | null = null
+  private lastClientY: number | null = null
 
   constructor(private container: HTMLElement) {
     this.onMove = (e: MouseEvent) => {
@@ -31,10 +37,24 @@ export class Pointer {
       this.rawX = ((e.clientX - rect.left) / rect.width) * 2 - 1
       this.rawY = -((e.clientY - rect.top) / rect.height) * 2 + 1
       this.active = true
+
+      if (
+        this.lastClientX === null ||
+        this.lastClientY === null ||
+        Math.hypot(e.clientX - this.lastClientX, e.clientY - this.lastClientY) > 0.5
+      ) {
+        this.idleTime = 0
+        this.movedThisFrame = true
+        this.lastClientX = e.clientX
+        this.lastClientY = e.clientY
+      }
     }
 
     this.onLeave = () => {
       this.active = false
+      this.idleTime = 0
+      this.lastClientX = null
+      this.lastClientY = null
     }
 
     container.addEventListener('mousemove', this.onMove)
@@ -48,6 +68,7 @@ export class Pointer {
       this.vy *= Math.pow(0.01, dt)
       this.anchorX += this.vx * dt
       this.anchorY += this.vy * dt
+      this.movedThisFrame = false
       return
     }
 
@@ -70,6 +91,12 @@ export class Pointer {
     const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy)
     if (speed > 0.001) {
       this.angle = Math.atan2(this.vy, this.vx)
+    }
+
+    if (this.movedThisFrame) {
+      this.movedThisFrame = false
+    } else {
+      this.idleTime += dt
     }
   }
 

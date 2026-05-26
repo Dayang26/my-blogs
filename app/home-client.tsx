@@ -14,22 +14,37 @@ type HomeClientProps = {
   posts: PostListItem[];
 };
 
+function TextObstacles({ text }: { text: string }) {
+  const words = text.split(' ');
+  return (
+    <>
+      {words.map((word, i) => (
+        <span key={i} className="whitespace-nowrap">
+          {word.split('').map((char, j) => (
+            <span key={j} data-obstacle="true">{char}</span>
+          ))}
+          {i !== words.length - 1 && <span> </span>}
+        </span>
+      ))}
+    </>
+  );
+}
+
 export function HomeClient({ posts }: HomeClientProps) {
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-6">
       {/* ─── Hero ─── */}
       <section className="relative flex flex-col items-center justify-center py-24 md:py-32 animate-fade-in" style={{ animationDelay: '50ms' }}>
         <ParticleBackground />
-        <div data-obstacle="true" className="relative z-10 h-px w-[120px] bg-[var(--border)] mb-8" />
-        <h1 data-obstacle="true" className="relative z-10 font-heading text-5xl font-bold tracking-[0.25em] md:text-[64px] text-[var(--text-primary)]">
-          SnowLine
+        <h1 className="relative z-10 font-heading text-5xl font-bold tracking-[0.25em] md:text-[64px] text-[var(--text-primary)]">
+          <TextObstacles text="SnowLine" />
         </h1>
         <div data-obstacle="true" className="relative z-10 h-px w-[120px] bg-[var(--border)] mt-8 mb-6" />
-        <p data-obstacle="true" className="relative z-10 font-sans text-base italic text-[var(--text-secondary)] animate-fade-in" style={{ animationDelay: '100ms' }}>
-          Personality begins where comparison ends.
+        <p className="relative z-10 font-sans text-base italic text-[var(--text-secondary)] animate-fade-in" style={{ animationDelay: '100ms' }}>
+          <TextObstacles text="Personality begins where comparison ends." />
         </p>
-        <p data-obstacle="true" className="relative z-10 mt-2 font-sans text-sm font-medium text-[var(--text-muted)] animate-fade-in" style={{ animationDelay: '150ms' }}>
-          Aaron Hu
+        <p className="relative z-10 mt-2 font-sans text-sm font-medium text-[var(--text-muted)] animate-fade-in" style={{ animationDelay: '150ms' }}>
+          <TextObstacles text="Aaron Hu" />
         </p>
       </section>
 

@@ -9,41 +9,29 @@ export type AABB = {
 
 export class DomObstacles {
   public rects: AABB[] = []
-  private handleUpdate: () => void
-
   constructor(private camera: PerspectiveCamera, private container: HTMLElement) {
-    this.handleUpdate = () => this.update()
-    
-    // 初始化并监听更新
-    this.update()
-    window.addEventListener('resize', this.handleUpdate)
-    window.addEventListener('scroll', this.handleUpdate)
-    
-    // 使用 MutationObserver 监听可能的 DOM 动态变化（如字体加载导致布局变化）
-    const observer = new MutationObserver(this.handleUpdate)
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true })
-    // 为了防止 observer 无法清除，将其挂载到 dispose
-    this.observer = observer
+    // 移除事件监听，改在 renderer 的 tick 中每帧更新，以保证应对所有字体加载和动画
   }
-  
-  private observer: MutationObserver
 
   update() {
     const els = document.querySelectorAll('[data-obstacle="true"]')
     const containerRect = this.container.getBoundingClientRect()
     
-    // 如果容器高度或宽度为0，则跳过
     if (containerRect.width === 0 || containerRect.height === 0) return
 
     this.rects = []
-    
+
     els.forEach(el => {
       const rect = el.getBoundingClientRect()
-      
-      // 5px 的 Padding
-      const p = 5
+      const style = window.getComputedStyle(el)
+      const ls = parseFloat(style.letterSpacing)
+      const lsOffset = isNaN(ls) ? 0 : ls
+
+      // 0px Padding，完全使用字体原本的边界，确保字母间物理缝隙最大化
+      // 关键修复：getBoundingClientRect 会包含 letter-spacing 的宽度，导致盒子在右侧相连。我们需要减去它！
+      const p = 0
       const left = rect.left - p
-      const right = rect.right + p
+      const right = rect.right + p - lsOffset
       const top = rect.top - p
       const bottom = rect.bottom + p
       
@@ -77,8 +65,6 @@ export class DomObstacles {
   }
 
   dispose() {
-    window.removeEventListener('resize', this.handleUpdate)
-    window.removeEventListener('scroll', this.handleUpdate)
-    this.observer.disconnect()
+    // 已经移到 tick 里每帧处理，无需手动清理事件
   }
 }

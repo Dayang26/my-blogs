@@ -36,10 +36,10 @@ export function ParticleBackground() {
   return (
     <div
       ref={containerRef}
-      className="absolute top-1/2 h-[125%] overflow-hidden"
+      className="absolute top-0 h-full overflow-hidden"
       style={{
         left: '50%',
-        transform: 'translate(-50%, -50%)',
+        transform: 'translateX(-50%)',
         pointerEvents: 'none',
       }}
     >

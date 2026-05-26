@@ -14,6 +14,13 @@ export function ParticleBackground() {
 
     let ctx: RendererContext | null = null
 
+    const syncViewportWidth = () => {
+      container.style.width = `${document.documentElement.clientWidth}px`
+    }
+
+    syncViewportWidth()
+    window.addEventListener('resize', syncViewportWidth)
+
     // 动态导入 Three.js 渲染器，避免阻塞首屏
     import('./renderer').then(({ initRenderer }) => {
       if (!canvasRef.current || !containerRef.current) return
@@ -21,6 +28,7 @@ export function ParticleBackground() {
     })
 
     return () => {
+      window.removeEventListener('resize', syncViewportWidth)
       ctx?.dispose()
     }
   }, [])
@@ -28,8 +36,12 @@ export function ParticleBackground() {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 overflow-hidden"
-      style={{ pointerEvents: 'none' }}
+      className="absolute top-1/2 h-[125%] overflow-hidden"
+      style={{
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        pointerEvents: 'none',
+      }}
     >
       <canvas
         ref={canvasRef}

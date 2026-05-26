@@ -17,7 +17,6 @@ import type { AABB } from './dom-obstacles'
 
 const vertexShader = /* glsl */ `
   uniform float uPixelRatio;
-  uniform float uIdleProgress;
   attribute float aSize;
   attribute float aRandom;
   attribute float aAngle;
@@ -33,13 +32,11 @@ const vertexShader = /* glsl */ `
     gl_Position = projectionMatrix * mvPosition;
 
     float perspectiveScale = 6.0 / max(0.25, -mvPosition.z);
-    float baseSize = aSize * perspectiveScale * uPixelRatio;
     float depth = smoothstep(-1.7, 1.45, position.z);
-    float idleSize = mix(1.0, aSize * 1.55, depth) * uPixelRatio;
 
     vDepth = depth;
-    vCapsule = mix(1.0, depth, uIdleProgress);
-    gl_PointSize = mix(baseSize, idleSize, uIdleProgress);
+    vCapsule = depth;
+    gl_PointSize = mix(1.0, aSize * 0.3875 * perspectiveScale, depth) * uPixelRatio;
   }
 `
 
@@ -86,7 +83,7 @@ const fragmentShader = /* glsl */ `
     float d = capsuleSdf(p, halfLen, radius);
     if (d > 0.0) discard;
 
-    float t = vRandom + gl_PointCoord.x * 0.36 + vDepth * 0.18 + uTime * uSpectrumSpeed;
+    float t = vRandom + vDepth * 0.18 + uTime * uSpectrumSpeed;
     vec3 color = spectrum(t);
     gl_FragColor = vec4(color, uOpacity);
   }
@@ -128,6 +125,7 @@ export class FlockLayer {
   private angleAttr: BufferAttribute
   private config: ParticleConfig['flock']
   private elapsed = 0
+  private visualIdleProgress = 0
 
   constructor(scene: Scene, config: ParticleConfig) {
     this.config = config.flock
@@ -173,7 +171,6 @@ export class FlockLayer {
       uniforms: {
         uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
         uTime: { value: 0 },
-        uIdleProgress: { value: 0 },
         uOpacity: { value: opacity },
         uSpectrumSpeed: { value: spectrumSpeed },
       },
@@ -202,10 +199,16 @@ export class FlockLayer {
       obstacleWeight, slotSpacing,
       idleStartDelay, idleRampDuration, idleCycleSpeed, idleZRange,
     } = this.config
-    const idleProgress = Math.min(
+    const targetIdleProgress = Math.min(
       Math.max((idleTime - idleStartDelay) / idleRampDuration, 0),
       1
     )
+    if (targetIdleProgress >= this.visualIdleProgress) {
+      this.visualIdleProgress = targetIdleProgress
+    } else {
+      this.visualIdleProgress = Math.max(0, this.visualIdleProgress - dt / 0.35)
+    }
+    const idleProgress = this.visualIdleProgress
 
     const cosA = Math.cos(anchorAngle)
     const sinA = Math.sin(anchorAngle)
@@ -358,8 +361,7 @@ export class FlockLayer {
       bird.y += bird.vy * dt
       const zWave = Math.sin((this.elapsed * idleCycleSpeed + bird.phase) * Math.PI * 2) * 0.5 + 0.5
       const targetZ = idleZRange[0] + (idleZRange[1] - idleZRange[0]) * zWave
-      const driftZ = Math.sin(bird.x * 2.0 + bird.y * 3.0 + bird.phase * 6.283) * 0.18
-      bird.z += ((targetZ - bird.z) * idleProgress + (driftZ - bird.z) * (1 - idleProgress)) * Math.min(dt * 3.5, 1)
+      bird.z += (targetZ - bird.z) * Math.min(dt * (0.35 + idleProgress * 3.15), 1)
 
       const speed = Math.sqrt(bird.vx * bird.vx + bird.vy * bird.vy)
       if (speed > 0.01) {
@@ -376,7 +378,6 @@ export class FlockLayer {
     this.posAttr.needsUpdate = true
     this.angleAttr.needsUpdate = true
     this.material.uniforms.uTime!.value = this.elapsed
-    this.material.uniforms.uIdleProgress!.value = idleProgress
   }
 
   dispose() {

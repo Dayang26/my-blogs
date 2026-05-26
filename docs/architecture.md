@@ -2,12 +2,12 @@
 
 ## 概述
 
-这是一个专注前端开发、技术探索与个人成长的技术博客。项目经过重构，移除了多语言和实验性的 3D 依赖，确立了极致的包豪斯极简视觉风格，通过内容与设计的极简带来沉浸式阅读体验。
+这是一个专注前端开发、技术探索与个人成长的技术博客。项目采用极致的包豪斯极简视觉风格，通过内容与设计的极简带来沉浸式阅读体验，并创新性地加入了基于 Three.js 的交互式 3D 粒子背景系统（Boids 鸟群算法），为极简设计注入灵动的生命力。
 
 ## 技术栈
 
 - **前端框架**: Next.js 16 (App Router) + 静态导出 (Static Export)
-- **核心库**: React 19, TypeScript
+- **核心库**: React 19, TypeScript, Three.js
 - **样式**: Tailwind CSS 4
 - **内容管理**: Velite
 - **包管理**: pnpm
@@ -28,6 +28,7 @@ my-blogs/
 │   ├── blog/                 # 博客相关组件
 │   ├── layout/               # 布局相关 (Header/Footer)
 │   ├── ui/                   # UI 基础组件
+│   ├── particles/            # 交互式 3D 粒子系统组件
 │   └── mdx/                  # MDX 渲染组件
 ├── content/posts/            # 博客文章 MDX 源文件 (单语言 zh.mdx)
 ├── data/                     # 静态数据
@@ -49,6 +50,12 @@ my-blogs/
 - **内容构建**: Velite 自动从 MDX 生成搜索索引、页面数据和类型定义。
 - **数据获取**: `lib/blog.ts` 中的函数负责聚合和过滤博客数据供前端消费。
 - **MDX 渲染**: 使用定制化的 `.mdx-content` 样式表，严格遵循排版层级和包豪斯设计规则。
+
+### 交互式粒子系统 (Particle System)
+
+- **核心渲染**: 基于 Three.js 的 `WebGLRenderer` 和 `InstancedMesh` 实现高性能的实例渲染。
+- **Boids 算法**: 通过 `flock-layer.ts` 中的 Compute Shader 或多线程逻辑模拟鸟群的群体行为（分离、对齐、凝聚）。
+- **交互控制**: 通过 `pointer.ts` 处理鼠标指针与粒子的互动，通过 `dom-obstacles.ts` 解析页面 DOM 元素，实现粒子的避障逻辑，使粒子系统与页面内容无缝融合。
 
 ## 页面路由
 

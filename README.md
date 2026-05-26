@@ -4,14 +4,15 @@
 
 ## ✨ 主要特点
 
-- **极致极简**: 移除了一切繁杂的视觉元素，专注内容的阅读体验。
+- **极致极简**: 以包豪斯设计为基底，利用线性结构与留白，专注内容的沉浸式阅读体验。
+- **互动视觉**: 创新的基于 Three.js 的 3D Boids 鸟群交互粒子背景，在极简的骨架下注入灵动的生命力。
 - **现代化架构**: 基于 Next.js (App Router) 进行全站静态生成（SSG）。
 - **Markdown 支持**: 通过 MDX 高效管理文章，支持自定义组件（如代码块、Giscus 评论）。
 
 ## 🛠️ 技术栈
 
 - **前端框架**: Next.js 16 (App Router) with static export
-- **核心库**: React 19, TypeScript
+- **核心库**: React 19, TypeScript, Three.js
 - **样式**: Tailwind CSS 4
 - **内容管理**: Velite (用于博客文章)
 - **包管理**: pnpm
@@ -43,6 +44,7 @@ my-blogs/
 │   ├── blog/               # 博客专用页面级组件
 │   ├── layout/             # 布局相关 (Header/Footer)
 │   ├── mdx/                # MDX 渲染用到的自定义组件
+│   ├── particles/          # 交互式 3D 粒子背景组件
 │   └── ui/                 # 基础 UI 组件
 ├── content/posts/          # 博客文章 MDX 源文件
 ├── lib/                    # 工具函数和配置

@@ -82,12 +82,12 @@ export function getConfig(): ParticleConfig | null {
     '(prefers-reduced-motion: reduce)'
   ).matches
 
-  if (prefersReducedMotion || isMobile) return null
+  if (prefersReducedMotion) return null
 
   return {
     enabled: true,
     flock: {
-      count: 300,
+      count: isMobile ? 100 : 300,
       sizeRange: [20, 40],
       maxSpeed: 7.0,
       maxForce: 18.0,

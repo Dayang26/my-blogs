@@ -34,7 +34,7 @@ export function HomeClient({ posts }: HomeClientProps) {
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-6">
       {/* ─── Hero ─── */}
-      <section className="relative flex flex-col items-center justify-center py-32 md:py-40 animate-fade-in" style={{ animationDelay: '50ms' }}>
+      <section className="relative flex min-h-[650px] flex-col items-center justify-center animate-fade-in" style={{ animationDelay: '50ms' }}>
         <ParticleBackground />
         <h1 className="relative z-10 font-heading text-5xl font-bold tracking-[0.25em] md:text-[64px] text-[var(--text-primary)]">
           <TextObstacles text="SnowLine" />

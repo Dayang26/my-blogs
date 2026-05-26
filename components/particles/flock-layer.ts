@@ -11,12 +11,15 @@ import {
   ShaderMaterial,
   NormalBlending,
   Scene,
+  PerspectiveCamera,
+  Vector3,
 } from 'three'
 import type { ParticleConfig } from './config'
 import type { AABB } from './dom-obstacles'
 
 const vertexShader = /* glsl */ `
   uniform float uPixelRatio;
+  uniform float uIdleProgress;
   attribute float aSize;
   attribute float aRandom;
   attribute float aAngle;
@@ -33,10 +36,12 @@ const vertexShader = /* glsl */ `
 
     float perspectiveScale = 6.0 / max(0.25, -mvPosition.z);
     float depth = smoothstep(-1.7, 1.45, position.z);
+    float idleDepth = max(depth, 0.74);
+    float visualDepth = mix(depth, idleDepth, uIdleProgress);
 
     vDepth = depth;
-    vCapsule = depth;
-    gl_PointSize = mix(1.0, aSize * 0.32 * perspectiveScale, depth) * uPixelRatio;
+    vCapsule = visualDepth;
+    gl_PointSize = mix(1.0, aSize * 0.32 * perspectiveScale, visualDepth) * uPixelRatio;
   }
 `
 
@@ -73,7 +78,7 @@ const fragmentShader = /* glsl */ `
   }
 
   void main() {
-    vec2 p = gl_PointCoord - 0.5;
+    vec2 p = vec2(gl_PointCoord.x - 0.5, 0.5 - gl_PointCoord.y);
     float c = cos(vAngle);
     float s = sin(vAngle);
     p = mat2(c, -s, s, c) * p;
@@ -97,6 +102,10 @@ type Bird = {
   vy: number
   phase: number
   angle: number
+  sphereX: number
+  sphereY: number
+  sphereZ: number
+  radiusJitter: number
 }
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
@@ -107,6 +116,18 @@ function getSlot(i: number, spacing: number): { x: number; y: number } {
   return { x: Math.cos(theta) * r, y: Math.sin(theta) * r }
 }
 
+function getSphereSlot(i: number, count: number): { x: number; y: number; z: number } {
+  const y = 1 - (2 * (i + 0.5)) / count
+  const r = Math.sqrt(Math.max(0, 1 - y * y))
+  const theta = (i + 0.5) * GOLDEN_ANGLE
+
+  return {
+    x: Math.cos(theta) * r,
+    y,
+    z: Math.sin(theta) * r,
+  }
+}
+
 function clampVec(vx: number, vy: number, max: number): [number, number] {
   const len = Math.sqrt(vx * vx + vy * vy)
   if (len > max && len > 0) {
@@ -114,6 +135,35 @@ function clampVec(vx: number, vy: number, max: number): [number, number] {
     return [vx * s, vy * s]
   }
   return [vx, vy]
+}
+
+function mix(a: number, b: number, t: number) {
+  return a + (b - a) * t
+}
+
+function smoothstep01(t: number) {
+  return t * t * (3 - 2 * t)
+}
+
+function lerpAngle(a: number, b: number, t: number) {
+  let delta = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI
+  if (delta < -Math.PI) delta += Math.PI * 2
+  return a + delta * t
+}
+
+function getCenterFacingCapsuleAngle(
+  particleNdcX: number,
+  particleNdcY: number,
+  anchorX: number,
+  anchorY: number,
+  aspect: number
+) {
+  const dx = (anchorX - particleNdcX) * aspect
+  const dy = anchorY - particleNdcY
+
+  // The fragment shader normalizes gl_PointCoord into screen space (x right,
+  // y up), so aAngle is the capsule long-axis direction in that same space.
+  return Math.atan2(dy, dx)
 }
 
 export class FlockLayer {
@@ -126,6 +176,7 @@ export class FlockLayer {
   private config: ParticleConfig['flock']
   private elapsed = 0
   private visualIdleProgress = 0
+  private projectionScratch = new Vector3()
 
   constructor(scene: Scene, config: ParticleConfig) {
     this.config = config.flock
@@ -140,10 +191,12 @@ export class FlockLayer {
     for (let i = 0; i < count; i++) {
       // 初始位置集中在中心附近
       const slot = getSlot(i, this.config.slotSpacing)
+      const sphereSlot = getSphereSlot(i, count)
       const x = slot.x + (Math.random() - 0.5) * 0.5
       const y = slot.y + (Math.random() - 0.5) * 0.5
       const z = (Math.random() - 0.5) * 0.5
       const angle = Math.random() * Math.PI * 2
+      const phase = Math.random()
 
       positions[i * 3 + 0] = x
       positions[i * 3 + 1] = y
@@ -153,7 +206,19 @@ export class FlockLayer {
       sizes[i] = sizeRange[0] + Math.random() * (sizeRange[1] - sizeRange[0])
       angles[i] = angle
 
-      this.birds.push({ x, y, z, vx: 0, vy: 0, phase: Math.random(), angle })
+      this.birds.push({
+        x,
+        y,
+        z,
+        vx: 0,
+        vy: 0,
+        phase,
+        angle,
+        sphereX: sphereSlot.x,
+        sphereY: sphereSlot.y,
+        sphereZ: sphereSlot.z,
+        radiusJitter: 0.86 + Math.random() * 0.28,
+      })
     }
 
     this.geometry = new BufferGeometry()
@@ -173,6 +238,7 @@ export class FlockLayer {
         uTime: { value: 0 },
         uOpacity: { value: opacity },
         uSpectrumSpeed: { value: spectrumSpeed },
+        uIdleProgress: { value: 0 },
       },
       vertexShader,
       fragmentShader,
@@ -188,7 +254,8 @@ export class FlockLayer {
     anchorY: number,
     anchorAngle: number,
     idleTime: number,
-    obstacles: AABB[]
+    obstacles: AABB[],
+    camera: PerspectiveCamera
   ) {
     this.elapsed += dt
 
@@ -198,6 +265,8 @@ export class FlockLayer {
       alignmentWeight, alignmentRadius, arrivalRadius,
       obstacleWeight, slotSpacing,
       idleStartDelay, idleRampDuration, idleCycleSpeed, idleZRange,
+      idleSphereRadius, idleSphereDepth, idleSphereWaveAmplitude,
+      idleSphereWaveSpeed, idleSphereRotationSpeed, idleSphereSeekWeight,
     } = this.config
     const targetIdleProgress = Math.min(
       Math.max((idleTime - idleStartDelay) / idleRampDuration, 0),
@@ -208,14 +277,21 @@ export class FlockLayer {
     } else {
       this.visualIdleProgress = Math.max(0, this.visualIdleProgress - dt / 0.35)
     }
-    const idleProgress = this.visualIdleProgress
+    const idleProgress = smoothstep01(this.visualIdleProgress)
 
     const cosA = Math.cos(anchorAngle)
     const sinA = Math.sin(anchorAngle)
+    const sphereRotation = this.elapsed * idleSphereRotationSpeed * Math.PI * 2
+    const cosSphere = Math.cos(sphereRotation)
+    const sinSphere = Math.sin(sphereRotation)
 
     // anchor 从 NDC (-1~1) 转到世界坐标（大约 *4）
     const ax = anchorX * 4.0
     const ay = anchorY * 4.0
+    const activeSeekWeight = mix(seekWeight, idleSphereSeekWeight, idleProgress)
+    const activeSeparationWeight = separationWeight * mix(1, 0.45, idleProgress)
+    const activeAlignmentWeight = alignmentWeight * (1 - idleProgress * 0.9)
+    const activeObstacleWeight = obstacleWeight * (1 - idleProgress * 0.7)
 
     for (let i = 0; i < this.birds.length; i++) {
       const bird = this.birds[i]!
@@ -227,24 +303,36 @@ export class FlockLayer {
       // 旋转队形，朝 anchor 运动方向展开
       const slotX = ax + localSlot.x * cosA - localSlot.y * sinA
       const slotY = ay + localSlot.x * sinA + localSlot.y * cosA
+      const sphereX = bird.sphereX * cosSphere - bird.sphereZ * sinSphere
+      const sphereZ = bird.sphereX * sinSphere + bird.sphereZ * cosSphere
+      const sphereWave = Math.sin(
+        (this.elapsed * idleSphereWaveSpeed + bird.phase) * Math.PI * 2
+      )
+      const spherePulse = idleSphereWaveAmplitude * sphereWave
+      const sphereRadiusX = idleSphereRadius[0] * bird.radiusJitter + spherePulse
+      const sphereRadiusY = idleSphereRadius[1] * bird.radiusJitter + spherePulse * 0.58
+      const idleSlotX = ax + sphereX * sphereRadiusX
+      const idleSlotY = ay + bird.sphereY * sphereRadiusY
+      const targetX = mix(slotX, idleSlotX, idleProgress)
+      const targetY = mix(slotY, idleSlotY, idleProgress)
 
-      const sdx = slotX - bird.x
-      const sdy = slotY - bird.y
+      const sdx = targetX - bird.x
+      const sdy = targetY - bird.y
       const sDist = Math.sqrt(sdx * sdx + sdy * sdy)
 
       if (sDist > 0.001) {
         // arrival: 接近时减速
-        let desiredSpeed = maxSpeed
+        let desiredSpeed = maxSpeed * mix(1, 0.78, idleProgress)
         if (sDist < arrivalRadius) {
-          desiredSpeed = maxSpeed * (sDist / arrivalRadius)
+          desiredSpeed *= sDist / arrivalRadius
         }
         const desiredVx = (sdx / sDist) * desiredSpeed
         const desiredVy = (sdy / sDist) * desiredSpeed
         let steerX = desiredVx - bird.vx
         let steerY = desiredVy - bird.vy
         ;[steerX, steerY] = clampVec(steerX, steerY, maxForce)
-        fx += steerX * seekWeight
-        fy += steerY * seekWeight
+        fx += steerX * activeSeekWeight
+        fy += steerY * activeSeekWeight
       }
 
       // 2. Separation
@@ -272,8 +360,8 @@ export class FlockLayer {
           sepY = (sepY / sepLen) * maxSpeed - bird.vy
           ;[sepX, sepY] = clampVec(sepX, sepY, maxForce)
         }
-        fx += sepX * separationWeight
-        fy += sepY * separationWeight
+        fx += sepX * activeSeparationWeight
+        fy += sepY * activeSeparationWeight
       }
 
       // 3. Alignment
@@ -300,8 +388,8 @@ export class FlockLayer {
           let steerX = (alignVx / aLen) * maxSpeed - bird.vx
           let steerY = (alignVy / aLen) * maxSpeed - bird.vy
           ;[steerX, steerY] = clampVec(steerX, steerY, maxForce)
-          fx += steerX * alignmentWeight
-          fy += steerY * alignmentWeight
+          fx += steerX * activeAlignmentWeight
+          fy += steerY * activeAlignmentWeight
         }
       }
 
@@ -347,8 +435,8 @@ export class FlockLayer {
           const ty = nx
           const side = Math.sign(bird.vx * tx + bird.vy * ty) || 1
           
-          fx += (nx * 0.4 + tx * side * 0.9) * strength * maxForce * obstacleWeight
-          fy += (ny * 0.4 + ty * side * 0.9) * strength * maxForce * obstacleWeight
+          fx += (nx * 0.4 + tx * side * 0.9) * strength * maxForce * activeObstacleWeight
+          fy += (ny * 0.4 + ty * side * 0.9) * strength * maxForce * activeObstacleWeight
         }
       }
 
@@ -360,12 +448,31 @@ export class FlockLayer {
       bird.x += bird.vx * dt
       bird.y += bird.vy * dt
       const zWave = Math.sin((this.elapsed * idleCycleSpeed + bird.phase) * Math.PI * 2) * 0.5 + 0.5
-      const targetZ = idleZRange[0] + (idleZRange[1] - idleZRange[0]) * zWave
+      const movingTargetZ = idleZRange[0] + (idleZRange[1] - idleZRange[0]) * zWave
+      const idleTargetZ = sphereZ * idleSphereDepth + sphereWave * idleSphereWaveAmplitude
+      const targetZ = mix(movingTargetZ, idleTargetZ, idleProgress)
       bird.z += (targetZ - bird.z) * Math.min(dt * (0.18 + idleProgress * 1.32), 1)
 
       const speed = Math.sqrt(bird.vx * bird.vx + bird.vy * bird.vy)
       if (speed > 0.01) {
         bird.angle = Math.atan2(bird.vy, bird.vx)
+      }
+      if (idleProgress > 0.01) {
+        const projected = this.projectionScratch.set(bird.x, bird.y, bird.z).project(camera)
+        const centerFacingAngle = getCenterFacingCapsuleAngle(
+          projected.x,
+          projected.y,
+          anchorX,
+          anchorY,
+          camera.aspect
+        )
+        bird.angle = idleProgress > 0.92
+          ? centerFacingAngle
+          : lerpAngle(
+              bird.angle,
+              centerFacingAngle,
+              Math.min(dt * idleProgress * 12, 1)
+            )
       }
 
       // 写入 buffer
@@ -378,6 +485,7 @@ export class FlockLayer {
     this.posAttr.needsUpdate = true
     this.angleAttr.needsUpdate = true
     this.material.uniforms.uTime!.value = this.elapsed
+    this.material.uniforms.uIdleProgress!.value = idleProgress
   }
 
   dispose() {

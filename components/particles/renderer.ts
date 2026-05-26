@@ -107,7 +107,8 @@ export function initRenderer(
       pointer.anchorY,
       pointer.angle,
       pointer.idleTime,
-      domObstacles.rects
+      domObstacles.rects,
+      camera
     )
 
     // 渲染

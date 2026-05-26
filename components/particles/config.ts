@@ -16,6 +16,12 @@ export type ParticleConfig = {
     idleRampDuration: number
     idleCycleSpeed: number
     idleZRange: [number, number]
+    idleSphereRadius: [number, number]
+    idleSphereDepth: number
+    idleSphereWaveAmplitude: number
+    idleSphereWaveSpeed: number
+    idleSphereRotationSpeed: number
+    idleSphereSeekWeight: number
     slotSpacing: number
     seekWeight: number
     separationWeight: number
@@ -54,6 +60,12 @@ export function getConfig(): ParticleConfig | null {
       idleRampDuration: 1.1,
       idleCycleSpeed: 0.16,
       idleZRange: [-1.7, 1.45],
+      idleSphereRadius: [4.7, 2.75],
+      idleSphereDepth: 1.55,
+      idleSphereWaveAmplitude: 0.24,
+      idleSphereWaveSpeed: 0.34,
+      idleSphereRotationSpeed: 0.035,
+      idleSphereSeekWeight: 3.0,
       slotSpacing: 0.18,
       seekWeight: 1.0,
       separationWeight: 1.8,

@@ -62,9 +62,12 @@ const vertexShader = /* glsl */ `
     
     // 恢复放大系数，使颗粒有明显的膨胀感
     float sizeMultiplier = mix(1.0, 1.0 + (wave * 0.5 + 0.5) * 1.5 * uWaveIntensity, uIdleProgress);
+    
+    // 非 idle 状态下稍微放大粒子的基础尺寸（比如用 0.45 替代 0.32）
+    float baseScale = mix(0.45, 0.32, uIdleProgress);
 
     // 将最终生成的精灵区域(Point Sprite)放大 2 倍，为旋转的胶囊体提供足够的画布空间，防止裁剪
-    gl_PointSize = mix(1.0, aSize * 0.32 * perspectiveScale * sizeMultiplier, visualDepth) * uPixelRatio * 2.0;
+    gl_PointSize = mix(1.0, aSize * baseScale * perspectiveScale * sizeMultiplier, visualDepth) * uPixelRatio * 2.0;
   }
 `
 
@@ -122,7 +125,8 @@ const fragmentShader = /* glsl */ `
     vec2 posDir = normalize(vec2(cos(vPosAngle), sin(vPosAngle)));
     // 取消片元着色器中过度的拉伸（过大会超出 point sprite 的 0.5 边界导致被裁剪成方形）
     // 粒子的整体变长变大会由顶点着色器中的 gl_PointSize (sizeMultiplier) 负责
-    float stretch = mix(1.0, 0.6 + vPosRadius * 0.4, uIdleProgress);
+    // 非 idle 状态下(自由飞舞时)，让粒子基础长度变长一些（拉伸系数由 1.0 提高到 1.6）
+    float stretch = mix(1.6, 0.6 + vPosRadius * 0.4, uIdleProgress);
     // 内部几何尺寸缩小一倍 (因为画布 gl_PointSize 已放大 2 倍，故视觉物理尺寸保持不变，但再也不会超出画布)
     float halfLen = mix(0.0, 0.4 * stretch, vCapsule) * 0.5;
     float thickness = mix(0.31, 0.205, vCapsule) * 0.5;

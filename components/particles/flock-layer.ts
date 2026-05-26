@@ -36,7 +36,7 @@ const vertexShader = /* glsl */ `
 
     vDepth = depth;
     vCapsule = depth;
-    gl_PointSize = mix(1.0, aSize * 0.3875 * perspectiveScale, depth) * uPixelRatio;
+    gl_PointSize = mix(1.0, aSize * 0.32 * perspectiveScale, depth) * uPixelRatio;
   }
 `
 
@@ -78,7 +78,7 @@ const fragmentShader = /* glsl */ `
     float s = sin(vAngle);
     p = mat2(c, -s, s, c) * p;
 
-    float halfLen = mix(0.0, 0.27, vCapsule);
+    float halfLen = mix(0.0, 0.4, vCapsule);
     float radius = mix(0.31, 0.205, vCapsule);
     float d = capsuleSdf(p, halfLen, radius);
     if (d > 0.0) discard;
@@ -361,7 +361,7 @@ export class FlockLayer {
       bird.y += bird.vy * dt
       const zWave = Math.sin((this.elapsed * idleCycleSpeed + bird.phase) * Math.PI * 2) * 0.5 + 0.5
       const targetZ = idleZRange[0] + (idleZRange[1] - idleZRange[0]) * zWave
-      bird.z += (targetZ - bird.z) * Math.min(dt * (0.35 + idleProgress * 3.15), 1)
+      bird.z += (targetZ - bird.z) * Math.min(dt * (0.18 + idleProgress * 1.32), 1)
 
       const speed = Math.sqrt(bird.vx * bird.vx + bird.vy * bird.vy)
       if (speed > 0.01) {

@@ -32,18 +32,22 @@ export type ParticleConfig = {
     minVisualDepth: number
     /** 空闲状态下粒子的最小可视深度，保持胶囊方向可读 */
     idleMinVisualDepth: number
-    /** 空闲状态下形成的球体半径范围 [内半径, 外半径] */
-    idleSphereRadius: [number, number]
-    /** 空闲状态球体的深度厚度 */
-    idleSphereDepth: number
-    /** 空闲状态球体表面波浪效果的振幅 */
-    idleSphereWaveAmplitude: number
-    /** 空闲状态球体表面波浪效果的运动速度 */
-    idleSphereWaveSpeed: number
-    /** 空闲状态球体自身的旋转速度 */
-    idleSphereRotationSpeed: number
-    /** 空闲状态下粒子向目标位置寻找的权重 */
-    idleSphereSeekWeight: number
+    /** 空闲状态下形成的穹顶二维半径范围 [内半径, 外半径] */
+    idleDomeRadius: [number, number]
+    /** 穹顶的三维深度凹陷（倒扣在屏幕深处） */
+    idleDomeDepth: number
+    /** 水母呼吸动画的径向扩散振幅 */
+    idleBreatheAmplitude: number
+    /** 水母呼吸动画的波频率（基于距离） */
+    idleBreatheFrequency: number
+    /** 水母呼吸动画的时间速度 */
+    idleBreatheSpeed: number
+    /** 水母呼吸动画在 Z 轴（深度方向）的起伏振幅 */
+    idleBreatheZAmplitude: number
+    /** 穹顶整体的缓慢旋转速度 */
+    idleDomeRotationSpeed: number
+    /** 空闲状态下的寻的权重 */
+    idleDomeSeekWeight: number
     /** 粒子排列形成文字或图形时的槽位间距 */
     slotSpacing: number
     /** 寻找目标点（Seek）行为的权重 */
@@ -95,12 +99,14 @@ export function getConfig(): ParticleConfig | null {
       idleZRange: [-1.7, 1.45],
       minVisualDepth: 0.38,
       idleMinVisualDepth: 0.74,
-      idleSphereRadius: [4.7, 2.75],
-      idleSphereDepth: 1.55,
-      idleSphereWaveAmplitude: 0.24,
-      idleSphereWaveSpeed: 0.34,
-      idleSphereRotationSpeed: 0.035,
-      idleSphereSeekWeight: 3.0,
+      idleDomeRadius: [0.5, 6.0],
+      idleDomeDepth: -2.0,
+      idleBreatheAmplitude: 0.3,
+      idleBreatheFrequency: 1.2,
+      idleBreatheSpeed: 0.4,
+      idleBreatheZAmplitude: 0.6,
+      idleDomeRotationSpeed: -0.015,
+      idleDomeSeekWeight: 3.0,
       slotSpacing: 0.18,
       seekWeight: 1.0,
       separationWeight: 1.8,

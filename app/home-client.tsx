@@ -1,8 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { type PostListItem } from '@/types/blog';
 import { formatBlogDate, getTagLabel } from '@/lib/blog-shared';
+
+const ParticleBackground = dynamic(
+  () => import('@/components/particles/ParticleBackground').then(m => ({ default: m.ParticleBackground })),
+  { ssr: false }
+);
 
 type HomeClientProps = {
   posts: PostListItem[];
@@ -12,16 +18,17 @@ export function HomeClient({ posts }: HomeClientProps) {
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-6">
       {/* ─── Hero ─── */}
-      <section className="flex flex-col items-center justify-center py-24 md:py-32 animate-fade-in" style={{ animationDelay: '50ms' }}>
-        <div className="h-px w-[120px] bg-[var(--border)] mb-8" />
-        <h1 className="font-heading text-5xl font-bold tracking-[0.25em] md:text-[64px] text-[var(--text-primary)]">
+      <section className="relative flex flex-col items-center justify-center py-24 md:py-32 animate-fade-in" style={{ animationDelay: '50ms' }}>
+        <ParticleBackground />
+        <div data-obstacle="true" className="relative z-10 h-px w-[120px] bg-[var(--border)] mb-8" />
+        <h1 data-obstacle="true" className="relative z-10 font-heading text-5xl font-bold tracking-[0.25em] md:text-[64px] text-[var(--text-primary)]">
           SnowLine
         </h1>
-        <div className="h-px w-[120px] bg-[var(--border)] mt-8 mb-6" />
-        <p className="font-sans text-base italic text-[var(--text-secondary)] animate-fade-in" style={{ animationDelay: '100ms' }}>
+        <div data-obstacle="true" className="relative z-10 h-px w-[120px] bg-[var(--border)] mt-8 mb-6" />
+        <p data-obstacle="true" className="relative z-10 font-sans text-base italic text-[var(--text-secondary)] animate-fade-in" style={{ animationDelay: '100ms' }}>
           Personality begins where comparison ends.
         </p>
-        <p className="mt-2 font-sans text-sm font-medium text-[var(--text-muted)] animate-fade-in" style={{ animationDelay: '150ms' }}>
+        <p data-obstacle="true" className="relative z-10 mt-2 font-sans text-sm font-medium text-[var(--text-muted)] animate-fade-in" style={{ animationDelay: '150ms' }}>
           Aaron Hu
         </p>
       </section>

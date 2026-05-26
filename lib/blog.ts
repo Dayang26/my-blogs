@@ -25,27 +25,6 @@ export const getTags = (posts = sortedPosts) => {
     .map(([tag]) => tag);
 };
 
-const getSeriesGroups = (posts = sortedPosts): SeriesGroup[] => {
-  const map = new Map<string, PostListItem[]>();
-  posts.forEach((post) => {
-    if (!post.series) return;
-    const existing = map.get(post.series) ?? [];
-    existing.push(post);
-    map.set(post.series, existing);
-  });
-
-  return [...map.entries()]
-    .map(([name, items]) => ({
-      name,
-      posts: [...items].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      ),
-    }))
-    .sort(
-      (a, b) =>
-        new Date(b.posts[0]?.date ?? 0).getTime() - new Date(a.posts[0]?.date ?? 0).getTime(),
-    );
-};
 
 export const getAdjacentPosts = (slug: string, posts = sortedPosts) => {
   const index = posts.findIndex((post) => post.slug === slug);

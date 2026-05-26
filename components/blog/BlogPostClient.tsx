@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { type PostEntity, type PostListItem } from '@/types/blog';
 import { formatBlogDate, getTagLabel } from '@/lib/blog-shared';
 import { MDXContent } from '@/components/mdx-content';
-import { Giscus } from '@/components/mdx/giscus';
+import Giscus from '@giscus/react';
 import { giscusConfig } from '@/lib/giscus-config';
 
 type BlogPostClientProps = {
@@ -97,7 +97,7 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
           评论
         </h3>
         {giscusConfig.repoId && giscusConfig.categoryId ? (
-          <Giscus {...giscusConfig} />
+          <Giscus key={post.slug} {...giscusConfig} />
         ) : (
           <div className="text-sm text-[var(--text-muted)]">
             请在 GitHub 上启用 Discussions 并配置 Giscus。

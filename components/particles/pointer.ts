@@ -53,6 +53,8 @@ export class Pointer {
     this.onLeave = () => {
       this.active = false
       this.idleTime = 0
+      this.rawX = 0
+      this.rawY = 0
       this.lastClientX = null
       this.lastClientY = null
     }
@@ -63,11 +65,26 @@ export class Pointer {
 
   update(dt: number) {
     if (!this.active) {
-      // 鼠标离开后 anchor 缓慢回到中心
-      this.vx *= Math.pow(0.01, dt)
-      this.vy *= Math.pow(0.01, dt)
-      this.anchorX += this.vx * dt
-      this.anchorY += this.vy * dt
+      // 鼠标离开后以画布中心作为默认 idle 锚点
+      const dx = -this.anchorX
+      const dy = -this.anchorY
+
+      this.vx += dx * 3.0 * dt
+      this.vy += dy * 3.0 * dt
+
+      const damping = Math.pow(0.05, dt)
+      this.vx *= damping
+      this.vy *= damping
+
+      this.anchorX += this.vx
+      this.anchorY += this.vy
+
+      const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy)
+      if (speed > 0.001) {
+        this.angle = Math.atan2(this.vy, this.vx)
+      }
+
+      this.idleTime += dt
       this.movedThisFrame = false
       return
     }

@@ -28,6 +28,10 @@ export type ParticleConfig = {
     idleCycleSpeed: number
     /** 空闲状态下 Z 轴的运动范围 [最小深度, 最大深度] */
     idleZRange: [number, number]
+    /** 非空闲状态下粒子的最小可视深度，避免退化成点 */
+    minVisualDepth: number
+    /** 空闲状态下粒子的最小可视深度，保持胶囊方向可读 */
+    idleMinVisualDepth: number
     /** 空闲状态下形成的球体半径范围 [内半径, 外半径] */
     idleSphereRadius: [number, number]
     /** 空闲状态球体的深度厚度 */
@@ -89,6 +93,8 @@ export function getConfig(): ParticleConfig | null {
       idleRampDuration: 1.1,
       idleCycleSpeed: 0.16,
       idleZRange: [-1.7, 1.45],
+      minVisualDepth: 0.38,
+      idleMinVisualDepth: 0.74,
       idleSphereRadius: [4.7, 2.75],
       idleSphereDepth: 1.55,
       idleSphereWaveAmplitude: 0.24,

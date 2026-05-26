@@ -20,6 +20,8 @@ import type { AABB } from './dom-obstacles'
 const vertexShader = /* glsl */ `
   uniform float uPixelRatio;
   uniform float uIdleProgress;
+  uniform float uMinVisualDepth;
+  uniform float uIdleMinVisualDepth;
   attribute float aSize;
   attribute float aRandom;
   attribute float aAngle;
@@ -36,8 +38,9 @@ const vertexShader = /* glsl */ `
 
     float perspectiveScale = 6.0 / max(0.25, -mvPosition.z);
     float depth = smoothstep(-1.7, 1.45, position.z);
-    float idleDepth = max(depth, 0.74);
-    float visualDepth = mix(depth, idleDepth, uIdleProgress);
+    float baseDepth = max(depth, uMinVisualDepth);
+    float idleDepth = max(baseDepth, uIdleMinVisualDepth);
+    float visualDepth = mix(baseDepth, idleDepth, uIdleProgress);
 
     vDepth = depth;
     vCapsule = visualDepth;
@@ -180,7 +183,10 @@ export class FlockLayer {
 
   constructor(scene: Scene, config: ParticleConfig) {
     this.config = config.flock
-    const { count, sizeRange, opacity, spectrumSpeed } = this.config
+    const {
+      count, sizeRange, opacity, spectrumSpeed,
+      minVisualDepth, idleMinVisualDepth,
+    } = this.config
 
     // 初始化鸟群
     const positions = new Float32Array(count * 3)
@@ -239,6 +245,8 @@ export class FlockLayer {
         uOpacity: { value: opacity },
         uSpectrumSpeed: { value: spectrumSpeed },
         uIdleProgress: { value: 0 },
+        uMinVisualDepth: { value: minVisualDepth },
+        uIdleMinVisualDepth: { value: idleMinVisualDepth },
       },
       vertexShader,
       fragmentShader,

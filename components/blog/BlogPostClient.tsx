@@ -16,7 +16,7 @@ type BlogPostClientProps = {
 
 export default function BlogPostClient({ post, prev, next, related }: BlogPostClientProps) {
   return (
-    <main className="mx-auto flex w-full max-w-[720px] flex-col px-6 py-12 md:py-20">
+    <div className="mx-auto flex w-full max-w-[720px] flex-col px-6 py-12 md:py-20">
       <Link 
         href="/blog" 
         className="mb-10 font-sans text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
@@ -104,6 +104,6 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }

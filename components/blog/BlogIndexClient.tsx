@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { type PostListItem, type SearchIndexItem } from '@/types/blog';
 import { formatBlogDate, getTagLabel } from '@/lib/blog-shared';
 import { CustomSelect } from '@/components/ui/custom-select';
@@ -15,11 +15,22 @@ type BlogIndexProps = {
 
 export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeTag, setActiveTag] = useState('All');
   const [sortBy, setSortBy] = useState<'latest' | 'oldest' | 'read'>('latest');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [indexItems, setIndexItems] = useState<SearchIndexItem[]>([]);
   const [indexReady, setIndexReady] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => {
+      setDebouncedQuery(query);
+      setVisibleCount(PAGE_SIZE);
+    }, 200);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query]);
+
 
   useEffect(() => {
     let mounted = true;
@@ -31,7 +42,7 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
         setIndexItems(data);
         setIndexReady(true);
       })
-      .catch(() => {})
+      .catch((err) => { console.warn('Search index unavailable:', err); })
     return () => { mounted = false; };
   }, []);
 
@@ -41,7 +52,7 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
 
   const filteredItems = useMemo(() => {
     if (!indexReady) return [];
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = debouncedQuery.trim().toLowerCase();
     
     const items = indexItems;
 
@@ -56,7 +67,7 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
       if (sortBy === 'oldest') return new Date(a.date).getTime() - new Date(b.date).getTime();
       return b.readMinutes - a.readMinutes;
     });
-  }, [activeTag, indexItems, indexReady, query, sortBy]);
+  }, [activeTag, indexItems, indexReady, debouncedQuery, sortBy]);
 
   const visiblePosts = useMemo(() => {
     if (!indexReady) return posts.slice(0, visibleCount);
@@ -77,7 +88,7 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
           <input
             type="search"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); resetVisible(); }}
+            onChange={(e) => { setQuery(e.target.value); }}
             placeholder="搜索文章..."
             className="w-full border-b border-[var(--border)] bg-transparent py-2 font-sans text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none focus:border-[var(--accent)] md:w-64 transition-colors"
           />

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import type { PostListItem, SeriesGroup } from '@/types/blog';
+import type { CompositePost, PostListItem } from '@/types/blog';
 
 import postsData from './__generated_posts';
 
@@ -8,6 +8,12 @@ const publishedPosts = postsData.filter((post) => post.status === 'published');
 const sortedPosts = [...publishedPosts].sort(
   (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
 );
+
+function stripCode(post: CompositePost): PostListItem {
+  const { code: _code, ...rest } = post;
+  void _code;
+  return rest;
+}
 
 export const getBlogPosts = () => sortedPosts;
 
@@ -29,9 +35,11 @@ export const getTags = (posts = sortedPosts) => {
 export const getAdjacentPosts = (slug: string, posts = sortedPosts) => {
   const index = posts.findIndex((post) => post.slug === slug);
   if (index === -1) return { prev: null, next: null };
+  const prev = posts[index - 1];
+  const next = posts[index + 1];
   return {
-    prev: posts[index - 1] ?? null,
-    next: posts[index + 1] ?? null,
+    prev: prev ? stripCode(prev) : null,
+    next: next ? stripCode(next) : null,
   };
 };
 
@@ -48,15 +56,16 @@ export const getRelatedPosts = (slug: string, posts = sortedPosts, limit = 3) =>
     })
     .sort((a, b) => b.score - a.score || new Date(b.post.date).getTime() - new Date(a.post.date).getTime());
 
-  return scored.slice(0, limit).map(({ post }) => post);
+  return scored
+    .slice(0, limit)
+    .filter(({ score }) => score > 0)
+    .map(({ post }) => stripCode(post));
 };
 
 export const getBlogIndexData = cache(() => {
-  const posts = sortedPosts;
+  const posts: PostListItem[] = sortedPosts.map(stripCode);
   return {
     posts,
-    tags: ['All', ...getTags(posts)],
+    tags: ['All', ...getTags(sortedPosts)],
   };
 });
-
-export { formatBlogDate } from './blog-shared';

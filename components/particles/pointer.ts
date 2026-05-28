@@ -27,27 +27,33 @@ export class Pointer {
 
   private onMove: (e: MouseEvent) => void
   private onLeave: () => void
+  private onTouchMove: (e: TouchEvent) => void
+  private onTouchEnd: () => void
   private movedThisFrame = false
   private lastClientX: number | null = null
   private lastClientY: number | null = null
 
   constructor(private container: HTMLElement) {
-    this.onMove = (e: MouseEvent) => {
+    const updateFromClient = (clientX: number, clientY: number) => {
       const rect = container.getBoundingClientRect()
-      this.rawX = ((e.clientX - rect.left) / rect.width) * 2 - 1
-      this.rawY = -((e.clientY - rect.top) / rect.height) * 2 + 1
+      this.rawX = ((clientX - rect.left) / rect.width) * 2 - 1
+      this.rawY = -((clientY - rect.top) / rect.height) * 2 + 1
       this.active = true
 
       if (
         this.lastClientX === null ||
         this.lastClientY === null ||
-        Math.hypot(e.clientX - this.lastClientX, e.clientY - this.lastClientY) > 0.5
+        Math.hypot(clientX - this.lastClientX, clientY - this.lastClientY) > 0.5
       ) {
         this.idleTime = 0
         this.movedThisFrame = true
-        this.lastClientX = e.clientX
-        this.lastClientY = e.clientY
+        this.lastClientX = clientX
+        this.lastClientY = clientY
       }
+    }
+
+    this.onMove = (e: MouseEvent) => {
+      updateFromClient(e.clientX, e.clientY)
     }
 
     this.onLeave = () => {
@@ -59,8 +65,25 @@ export class Pointer {
       this.lastClientY = null
     }
 
-    container.addEventListener('mousemove', this.onMove)
+    this.onTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      if (touch) updateFromClient(touch.clientX, touch.clientY)
+    }
+
+    this.onTouchEnd = () => {
+      this.active = false
+      this.idleTime = 0
+      this.rawX = 0
+      this.rawY = 0
+      this.lastClientX = null
+      this.lastClientY = null
+    }
+
+    container.addEventListener('mousemove', this.onMove, { passive: true })
     container.addEventListener('mouseleave', this.onLeave)
+    container.addEventListener('touchmove', this.onTouchMove, { passive: true })
+    container.addEventListener('touchend', this.onTouchEnd)
+    container.addEventListener('touchcancel', this.onTouchEnd)
   }
 
   update(dt: number) {
@@ -120,5 +143,8 @@ export class Pointer {
   dispose() {
     this.container.removeEventListener('mousemove', this.onMove)
     this.container.removeEventListener('mouseleave', this.onLeave)
+    this.container.removeEventListener('touchmove', this.onTouchMove)
+    this.container.removeEventListener('touchend', this.onTouchEnd)
+    this.container.removeEventListener('touchcancel', this.onTouchEnd)
   }
 }

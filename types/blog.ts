@@ -1,4 +1,4 @@
-export interface CompositePost {
+export interface PostListItem {
   slug: string;
   date: string;
   tags: string[];
@@ -9,12 +9,13 @@ export interface CompositePost {
   title: string;
   excerpt: string;
   readMinutes: number;
+}
+
+export interface CompositePost extends PostListItem {
   code: string;
 }
 
 export type PostEntity = CompositePost;
-
-export type PostListItem = CompositePost;
 
 export type SeriesGroup = {
   name: string;

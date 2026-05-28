@@ -71,9 +71,7 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
             controls
             playsInline
             className="h-full w-full object-contain"
-          >
-            <track kind="captions" />
-          </video>
+          />
         </div>
         {title && <figcaption className="mt-2 text-center text-xs text-[var(--text-muted)]">{title}</figcaption>}
       </figure>

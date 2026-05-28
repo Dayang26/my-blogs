@@ -20,9 +20,24 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
   if (!post) {
     return { title: 'Blog — SnowLine' };
   }
+  const url = `/blog/${post.slug}`;
   return {
     title: `${post.title} — SnowLine`,
     description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url,
+      type: 'article',
+      publishedTime: post.date,
+      tags: post.tags,
+      siteName: 'SnowLine',
+    },
+    twitter: {
+      card: 'summary',
+      title: post.title,
+      description: post.excerpt,
+    },
   };
 };
 

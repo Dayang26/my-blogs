@@ -1,12 +1,8 @@
-// Giscus configuration for comments
-// To get repoId and categoryId, go to: https://giscus.app/apijson
-// Note: Empty repoId/categoryId will cause comments to not load
-// Use NEXT_PUBLIC_GISCUS_* env vars to override (baked at build time for static export)
 export const giscusConfig = {
-  repo: (process.env.NEXT_PUBLIC_GISCUS_REPO || 'Dayang26/my-blogs') as `${string}/${string}`,
-  repoId: process.env.NEXT_PUBLIC_GISCUS_REPO_ID || 'R_kgDOQ-qeBw',
-  category: process.env.NEXT_PUBLIC_GISCUS_CATEGORY || 'Announcements',
-  categoryId: process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID || 'DIC_kwDOQ-qeB84C42Rc',
+  repo: (process.env.NEXT_PUBLIC_GISCUS_REPO ?? '') as `${string}/${string}`,
+  repoId: process.env.NEXT_PUBLIC_GISCUS_REPO_ID ?? '',
+  category: process.env.NEXT_PUBLIC_GISCUS_CATEGORY ?? '',
+  categoryId: process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID ?? '',
   mapping: 'pathname' as const,
   theme: 'light',
   lang: 'zh-CN',

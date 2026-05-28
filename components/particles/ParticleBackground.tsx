@@ -13,6 +13,7 @@ export function ParticleBackground() {
     if (!canvas || !container) return
 
     let ctx: RendererContext | null = null
+    let disposed = false
 
     const syncViewportWidth = () => {
       container.style.width = `${document.documentElement.clientWidth}px`
@@ -21,13 +22,13 @@ export function ParticleBackground() {
     syncViewportWidth()
     window.addEventListener('resize', syncViewportWidth)
 
-    // 动态导入 Three.js 渲染器，避免阻塞首屏
     import('./renderer').then(({ initRenderer }) => {
-      if (!canvasRef.current || !containerRef.current) return
+      if (disposed || !canvasRef.current || !containerRef.current) return
       ctx = initRenderer(canvas, container)
     })
 
     return () => {
+      disposed = true
       window.removeEventListener('resize', syncViewportWidth)
       ctx?.dispose()
     }

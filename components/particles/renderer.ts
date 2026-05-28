@@ -62,7 +62,8 @@ export function initRenderer(
       camera.aspect = w / h
       camera.updateProjectionMatrix()
       renderer.setSize(w, h)
-      domObstacles.update() // resize 时更新 DOM 坐标
+      domObstacles.markDirty()
+      domObstacles.update()
     }, 100)
   }
   window.addEventListener('resize', onResize)

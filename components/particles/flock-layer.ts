@@ -121,8 +121,6 @@ const fragmentShader = /* glsl */ `
     float s = sin(vAngle);
     p = mat2(c, -s, s, c) * p;
 
-    // 方向性波动
-    vec2 posDir = normalize(vec2(cos(vPosAngle), sin(vPosAngle)));
     // 取消片元着色器中过度的拉伸（过大会超出 point sprite 的 0.5 边界导致被裁剪成方形）
     // 粒子的整体变长变大会由顶点着色器中的 gl_PointSize (sizeMultiplier) 负责
     // 非 idle 状态下(自由飞舞时)，让粒子基础长度变长一些（拉伸系数由 1.0 提高到 1.6）
@@ -153,6 +151,55 @@ type Bird = {
   domeY: number
   domeR: number
   radiusJitter: number
+}
+
+class SpatialHash {
+  private cellSize: number
+  private cells = new Map<number, number[]>()
+  private invCellSize: number
+
+  constructor(cellSize: number) {
+    this.cellSize = cellSize
+    this.invCellSize = 1 / cellSize
+  }
+
+  clear() {
+    this.cells.clear()
+  }
+
+  insert(index: number, x: number, y: number) {
+    const key = this.key(x, y)
+    let bucket = this.cells.get(key)
+    if (!bucket) {
+      bucket = []
+      this.cells.set(key, bucket)
+    }
+    bucket.push(index)
+  }
+
+  query(x: number, y: number, radius: number, callback: (index: number) => void) {
+    const minCX = Math.floor((x - radius) * this.invCellSize)
+    const maxCX = Math.floor((x + radius) * this.invCellSize)
+    const minCY = Math.floor((y - radius) * this.invCellSize)
+    const maxCY = Math.floor((y + radius) * this.invCellSize)
+
+    for (let cx = minCX; cx <= maxCX; cx++) {
+      for (let cy = minCY; cy <= maxCY; cy++) {
+        const bucket = this.cells.get(cx * 73856093 ^ cy * 19349663)
+        if (bucket) {
+          for (let k = 0; k < bucket.length; k++) {
+            callback(bucket[k]!)
+          }
+        }
+      }
+    }
+  }
+
+  private key(x: number, y: number): number {
+    const cx = Math.floor(x * this.invCellSize)
+    const cy = Math.floor(y * this.invCellSize)
+    return cx * 73856093 ^ cy * 19349663
+  }
 }
 
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5))
@@ -223,13 +270,15 @@ export class FlockLayer {
   private elapsed = 0
   private visualIdleProgress = 0
   private projectionScratch = new Vector3()
+  private spatialHash: SpatialHash
 
   constructor(scene: Scene, config: ParticleConfig) {
     this.config = config.flock
     const {
       count, sizeRange, opacity, spectrumSpeed,
-      minVisualDepth, idleMinVisualDepth,
+      minVisualDepth, idleMinVisualDepth, alignmentRadius,
     } = this.config
+    this.spatialHash = new SpatialHash(alignmentRadius)
 
     // 初始化鸟群
     const positions = new Float32Array(count * 3)
@@ -379,6 +428,11 @@ export class FlockLayer {
     const activeAlignmentWeight = alignmentWeight * (1 - idleProgress * 0.9)
     const activeObstacleWeight = obstacleWeight * (1 - idleProgress * 0.7)
 
+    this.spatialHash.clear()
+    for (let i = 0; i < this.birds.length; i++) {
+      this.spatialHash.insert(i, this.birds[i]!.x, this.birds[i]!.y)
+    }
+
     for (let i = 0; i < this.birds.length; i++) {
       const bird = this.birds[i]!
       let fx = 0
@@ -430,12 +484,12 @@ export class FlockLayer {
         fy += steerY * activeSeekWeight
       }
 
-      // 2. Separation
+      // 2. Separation (空间哈希加速)
       let sepX = 0
       let sepY = 0
       let sepCount = 0
-      for (let j = 0; j < this.birds.length; j++) {
-        if (i === j) continue
+      this.spatialHash.query(bird.x, bird.y, separationRadius, (j) => {
+        if (i === j) return
         const other = this.birds[j]!
         const ddx = bird.x - other.x
         const ddy = bird.y - other.y
@@ -445,7 +499,7 @@ export class FlockLayer {
           sepY += ddy / dd / dd
           sepCount++
         }
-      }
+      })
       if (sepCount > 0) {
         sepX /= sepCount
         sepY /= sepCount
@@ -459,12 +513,12 @@ export class FlockLayer {
         fy += sepY * activeSeparationWeight
       }
 
-      // 3. Alignment
+      // 3. Alignment (空间哈希加速)
       let alignVx = 0
       let alignVy = 0
       let alignCount = 0
-      for (let j = 0; j < this.birds.length; j++) {
-        if (i === j) continue
+      this.spatialHash.query(bird.x, bird.y, alignmentRadius, (j) => {
+        if (i === j) return
         const other = this.birds[j]!
         const ddx = bird.x - other.x
         const ddy = bird.y - other.y
@@ -474,7 +528,7 @@ export class FlockLayer {
           alignVy += other.vy
           alignCount++
         }
-      }
+      })
       if (alignCount > 0) {
         alignVx /= alignCount
         alignVy /= alignCount

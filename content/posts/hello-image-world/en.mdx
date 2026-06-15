@@ -1,0 +1,26 @@
+---
+title: "Deploying Next.js Blog with Images on Cloudflare Pages"
+excerpt: "This article demonstrates how to place images in the project's public/static directory, reference them in Markdown using root paths, and automatically deploy them via Git commit and Cloudflare Pages."
+---
+
+This blog post is a demo post illustrating how to reference and display static images in a blog system powered by Velite and Next.js.
+
+## The Solution
+
+When writing blog posts, we often need illustrations. If we reference static images using absolute root paths (e.g. `/static/...`):
+1. **Local Development**: Next.js automatically maps the `public/` directory to the root `/`. Therefore, images placed in `public/static/` can be accessed locally directly via `/static/filename.png`.
+2. **Cloudflare Pages Deployment**: After code is pushed to GitHub and automatically built by Cloudflare, Cloudflare distributes all static assets in the `public/` directory to its global CDN. When users request `/static/filename.png` on the webpage, it will point directly to the image on the CDN, realizing fast and stable loading.
+
+## Demo Image 1: Cloud Computing and Deployment
+
+The first demo image shows the relationships among cloud computing, databases, and deployment networks. It is saved in the project's `public/images/demo-pic-1.png` and referenced in MDX using `/images/demo-pic-1.png`:
+
+![Cloud Computing and Deployment](/images/demo-pic-1.png)
+
+## Demo Image 2: Markdown and Build & Publish Workflow
+
+The second demo image shows the workflow of building Markdown posts through static site generators and pushing them to GitHub to trigger deployment. It is saved in the project's `public/images/demo-pic-2.png` and referenced in MDX using `/images/demo-pic-2.png`:
+
+![Build and Publish Workflow](/images/demo-pic-2.png)
+
+As demonstrated above, referencing images via the `/images` directory is very convenient and intuitive. It's not only friendly to local development but also a perfect match for platforms like Cloudflare Pages that have a global CDN out of the box.

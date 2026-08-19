@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>SnowLine</title>
+    <link>https://snowline.dev</link>
+    <description>关于前端开发、技术探索与个人成长的技术博客</description>
+    <language>zh-CN</language>
+    <lastBuildDate>Wed, 19 Aug 2026 13:58:59 GMT</lastBuildDate>
+    <atom:link href="https://snowline.dev/rss.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title><![CDATA[使用 Cloudflare Pages 部署带图片的 Next.js 博客]]></title>
+      <link>https://snowline.dev/blog/hello-image-world</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/hello-image-world</guid>
+      <description><![CDATA[本文演示了如何将图片放置在项目的 public/static 目录下，并在 Markdown 中利用根路径引用图片，然后通过 Git 提交和 Cloudflare Pages 自动部署。]]></description>
+      <pubDate>Mon, 15 Jun 2026 00:00:00 GMT</pubDate>
+      <category>Git</category>
+      <category>Cloudflare</category>
+      <category>Markdown</category>
+    </item>
+    <item>
+      <title><![CDATA[测试博客]]></title>
+      <link>https://snowline.dev/blog/test-post</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/test-post</guid>
+      <description><![CDATA[这是一篇测试博客，用于验证博客系统的功能。]]></description>
+      <pubDate>Mon, 23 Mar 2026 00:00:00 GMT</pubDate>
+      <category>AI</category>
+      <category>Rambler</category>
+    </item>
+    <item>
+      <title><![CDATA[手势交互性能优化笔记]]></title>
+      <link>https://snowline.dev/blog/handtrack-performance-playbook</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/handtrack-performance-playbook</guid>
+      <description><![CDATA[在 30 FPS 以上稳定运行的关键是：采样节奏、过滤策略与渲染隔离。]]></description>
+      <pubDate>Thu, 05 Feb 2026 00:00:00 GMT</pubDate>
+      <category>Performance</category>
+      <category>Vision</category>
+      <category>Architecture</category>
+    </item>
+    <item>
+      <title><![CDATA[2026.02 试验区更新日志]]></title>
+      <link>https://snowline.dev/blog/release-2026-02</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/release-2026-02</guid>
+      <description><![CDATA[本次更新加入性能诊断面板，并优化了像素按钮反馈。]]></description>
+      <pubDate>Wed, 04 Feb 2026 00:00:00 GMT</pubDate>
+      <category>Release</category>
+      <category>Product</category>
+    </item>
+    <item>
+      <title><![CDATA[像素风 UI 设计准则]]></title>
+      <link>https://snowline.dev/blog/pixel-ui-design-guidelines</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/pixel-ui-design-guidelines</guid>
+      <description><![CDATA[像素风不是老旧，而是信息密度、对比与层次的再平衡。]]></description>
+      <pubDate>Tue, 03 Feb 2026 00:00:00 GMT</pubDate>
+      <category>Design</category>
+      <category>Motion</category>
+      <category>UI</category>
+    </item>
+    <item>
+      <title><![CDATA[手势识别稳定性阈值怎么调]]></title>
+      <link>https://snowline.dev/blog/gesture-threshold-tuning</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/gesture-threshold-tuning</guid>
+      <description><![CDATA[不同光照与背景下，阈值变化会显著影响识别准确率。]]></description>
+      <pubDate>Mon, 02 Feb 2026 00:00:00 GMT</pubDate>
+      <category>Vision</category>
+      <category>Calibration</category>
+    </item>
+    <item>
+      <title><![CDATA[Rapier 物理调参指南]]></title>
+      <link>https://snowline.dev/blog/rapier-physics-tuning</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/rapier-physics-tuning</guid>
+      <description><![CDATA[抓取与抛掷的手感，来自摩擦、质量与冲量的配比。]]></description>
+      <pubDate>Sun, 01 Feb 2026 00:00:00 GMT</pubDate>
+      <category>Physics</category>
+      <category>Simulation</category>
+    </item>
+    <item>
+      <title><![CDATA[WebGL 场景负载排查]]></title>
+      <link>https://snowline.dev/blog/webgl-scene-debug</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/webgl-scene-debug</guid>
+      <description><![CDATA[减少 draw calls 与材质数，是提升帧率的捷径。]]></description>
+      <pubDate>Thu, 29 Jan 2026 00:00:00 GMT</pubDate>
+      <category>Rendering</category>
+      <category>Performance</category>
+    </item>
+    <item>
+      <title><![CDATA[像素雪花动效实现]]></title>
+      <link>https://snowline.dev/blog/pixel-snowfall-motion</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/pixel-snowfall-motion</guid>
+      <description><![CDATA[在不引入 Canvas 的情况下，用 CSS 动效实现落雪。]]></description>
+      <pubDate>Tue, 27 Jan 2026 00:00:00 GMT</pubDate>
+      <category>Motion</category>
+      <category>Design</category>
+    </item>
+    <item>
+      <title><![CDATA[2026.01 试验区更新日志]]></title>
+      <link>https://snowline.dev/blog/release-2026-01</link>
+      <guid isPermaLink="true">https://snowline.dev/blog/release-2026-01</guid>
+      <description><![CDATA[这一版聚焦交互稳定性与视觉层级整理。]]></description>
+      <pubDate>Thu, 15 Jan 2026 00:00:00 GMT</pubDate>
+      <category>Release</category>
+      <category>Product</category>
+    </item>
+  </channel>
+</rss>

@@ -1,4 +1,6 @@
 
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://snowline.dev';
+
 export const tagLabels: Record<string, string> = {
   AI: 'AI',
   Architecture: '系统架构',
@@ -29,3 +31,4 @@ export const getTagLabel = (tag: string) => {
   if (tag === 'All') return '全部';
   return tagLabels[tag] ?? tag;
 };
+

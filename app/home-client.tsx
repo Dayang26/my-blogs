@@ -19,16 +19,15 @@ function TextObstacles({ text }: { text: string }) {
   return (
     <>
       {words.map((word, i) => (
-        <span key={i} className="whitespace-nowrap">
-          {word.split('').map((char, j) => (
-            <span key={j} data-obstacle="true">{char}</span>
-          ))}
-          {i !== words.length - 1 && <span> </span>}
+        <span key={i} className="inline-block whitespace-nowrap" data-obstacle="true">
+          {word}
+          {i !== words.length - 1 && <span>&nbsp;</span>}
         </span>
       ))}
     </>
   );
 }
+
 
 export function HomeClient({ posts }: HomeClientProps) {
   return (

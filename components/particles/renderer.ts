@@ -68,12 +68,24 @@ export function initRenderer(
   }
   window.addEventListener('resize', onResize)
 
-  // Visibility
-  let paused = false
+  // Visibility & Viewport Intersection
+  let isDocVisible = !document.hidden
+  let isInViewport = true
+
+  const checkPaused = () => !isDocVisible || !isInViewport
+
   const onVisibility = () => {
-    paused = document.hidden
+    isDocVisible = !document.hidden
   }
   document.addEventListener('visibilitychange', onVisibility)
+
+  const intersectionObserver = new IntersectionObserver((entries) => {
+    if (entries[0]) {
+      isInViewport = entries[0].isIntersecting
+    }
+  }, { threshold: 0.05 })
+
+  intersectionObserver.observe(container)
 
   // Animation loop
   let animId = 0
@@ -85,7 +97,7 @@ export function initRenderer(
 
     animId = requestAnimationFrame(tick)
 
-    if (paused) {
+    if (checkPaused()) {
       last = now
       return
     }
@@ -98,7 +110,7 @@ export function initRenderer(
 
     // 每帧强行更新相机世界矩阵，以保证 domObstacles 中 unproject 计算准确
     camera.updateMatrixWorld()
-    // 每帧同步一次 DOM 的真实位置（应对字体加载、动画渲染带来的动态位移）
+    // 事件驱动更新 DOM 障碍物真实位置（内部有 dirty guard）
     domObstacles.update()
 
     // 更新各层
@@ -124,6 +136,7 @@ export function initRenderer(
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('visibilitychange', onVisibility)
+      intersectionObserver.disconnect()
       if (resizeTimeout) clearTimeout(resizeTimeout)
 
       pointer.dispose()
@@ -134,3 +147,4 @@ export function initRenderer(
     },
   }
 }
+

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { type PostEntity, type PostListItem } from '@/types/blog';
 import { formatBlogDate, getTagLabel } from '@/lib/blog-shared';
 import { MDXContent } from '@/components/mdx-content';
@@ -15,14 +16,36 @@ type BlogPostClientProps = {
 };
 
 export default function BlogPostClient({ post, prev, next, related }: BlogPostClientProps) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalScroll > 0) {
+        const current = (window.scrollY / totalScroll) * 100;
+        setProgress(Math.min(100, Math.max(0, current)));
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="mx-auto flex w-full max-w-[720px] flex-col px-6 py-12 md:py-20">
+      {/* 顶部 1px 阅读进度条 */}
+      <div
+        className="fixed left-0 top-0 z-50 h-[2px] bg-[var(--accent)] transition-[width] duration-75 ease-out"
+        style={{ width: `${progress}%` }}
+      />
+
       <Link 
         href="/blog" 
         className="mb-10 font-sans text-sm text-[var(--text-secondary)] transition-colors hover:text-[var(--accent)]"
       >
         ← 返回文章列表
       </Link>
+
 
       <article className="flex flex-col">
         <div className="mb-4 font-sans text-[13px] text-[var(--text-muted)]">

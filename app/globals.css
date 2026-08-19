@@ -88,10 +88,11 @@ body {
 .mdx-content pre {
   margin-top: 24px;
   background: var(--code-bg);
-  padding: 20px;
-  border-radius: 4px;
+  padding: 18px 20px;
+  border-radius: 0px;
   overflow-x: auto;
-  font-size: 14px;
+  font-size: 13.5px;
+  line-height: 1.65;
   border: 1px solid var(--border);
 }
 
@@ -100,17 +101,20 @@ body {
   background: transparent;
   padding: 0;
   color: inherit;
+  font-family: var(--font-mono);
+  display: grid;
 }
 
-.mdx-content code {
+.mdx-content :not(pre) > code {
   background: var(--code-bg);
   padding: 2px 6px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 2px;
   font-family: var(--font-mono);
   font-size: 0.875em;
   color: var(--text-primary);
 }
+
 
 .mdx-content blockquote {
   margin-top: 24px;

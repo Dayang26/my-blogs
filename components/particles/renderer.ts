@@ -37,19 +37,21 @@ export function initRenderer(
     100
   )
   camera.position.z = config.camera.z
+  camera.updateMatrixWorld()
 
   // Renderer
   const renderer = new WebGLRenderer({
     canvas,
-    antialias: true,
+    antialias: false,
     alpha: true,
   })
+  const pixelRatio = Math.min(window.devicePixelRatio, 1.5)
   renderer.setSize(width, height)
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  renderer.setPixelRatio(pixelRatio)
 
   // Layers
   const pointer = new Pointer(container)
-  const flockLayer = new FlockLayer(scene, config)
+  const flockLayer = new FlockLayer(scene, config, pixelRatio)
   const domObstacles = new DomObstacles(camera, container)
 
   // Resize
@@ -108,8 +110,6 @@ export function initRenderer(
     // 更新输入
     pointer.update(dt)
 
-    // 每帧强行更新相机世界矩阵，以保证 domObstacles 中 unproject 计算准确
-    camera.updateMatrixWorld()
     // 事件驱动更新 DOM 障碍物真实位置（内部有 dirty guard）
     domObstacles.update()
 
@@ -147,4 +147,3 @@ export function initRenderer(
     },
   }
 }
-

@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect } from 'react'
-import type { RendererContext } from './renderer'
+import { initRenderer, type RendererContext } from './renderer'
 
 export function ParticleBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -22,10 +22,9 @@ export function ParticleBackground() {
     syncViewportWidth()
     window.addEventListener('resize', syncViewportWidth)
 
-    import('./renderer').then(({ initRenderer }) => {
-      if (disposed || !canvasRef.current || !containerRef.current) return
+    if (!disposed) {
       ctx = initRenderer(canvas, container)
-    })
+    }
 
     return () => {
       disposed = true

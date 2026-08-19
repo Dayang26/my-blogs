@@ -87,7 +87,7 @@ export function getConfig(): ParticleConfig | null {
   return {
     enabled: true,
     flock: {
-      count: isMobile ? 100 : 300,
+      count: isMobile ? 60 : 300,
       sizeRange: [20, 40],
       maxSpeed: 7.0,
       maxForce: 18.0,

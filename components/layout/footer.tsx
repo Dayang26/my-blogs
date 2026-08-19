@@ -1,12 +1,5 @@
-'use client';
-
-import { useState } from 'react';
-
 export function Footer() {
-  const [year] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    return new Date().getFullYear();
-  });
+  const year = new Date().getFullYear();
 
   return (
     <footer className="w-full border-t border-[var(--border)] mt-20">

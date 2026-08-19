@@ -12,7 +12,7 @@ import {
   NormalBlending,
   Scene,
   PerspectiveCamera,
-  Vector3,
+  Vector2,
 } from 'three'
 import type { ParticleConfig } from './config'
 import type { AABB } from './dom-obstacles'
@@ -29,7 +29,7 @@ const vertexShader = /* glsl */ `
   attribute float aRandom;
   attribute float aAngle;
   varying float vRandom;
-  varying float vAngle;
+  varying vec2 vAngleBasis;
   varying float vCapsule;
   varying float vDepth;
   varying float vPosAngle;
@@ -37,7 +37,7 @@ const vertexShader = /* glsl */ `
 
   void main() {
     vRandom = aRandom;
-    vAngle = aAngle;
+    vAngleBasis = vec2(cos(aAngle), sin(aAngle));
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
@@ -80,7 +80,7 @@ const fragmentShader = /* glsl */ `
   uniform float uWaveIntensity;
   uniform float uTargetAngle;
   varying float vRandom;
-  varying float vAngle;
+  varying vec2 vAngleBasis;
   varying float vCapsule;
   varying float vDepth;
   varying float vPosAngle;
@@ -117,9 +117,7 @@ const fragmentShader = /* glsl */ `
 
   void main() {
     vec2 p = vec2(gl_PointCoord.x - 0.5, 0.5 - gl_PointCoord.y);
-    float c = cos(vAngle);
-    float s = sin(vAngle);
-    p = mat2(c, -s, s, c) * p;
+    p = mat2(vAngleBasis.x, -vAngleBasis.y, vAngleBasis.y, vAngleBasis.x) * p;
 
     // 取消片元着色器中过度的拉伸（过大会超出 point sprite 的 0.5 边界导致被裁剪成方形）
     // 粒子的整体变长变大会由顶点着色器中的 gl_PointSize (sizeMultiplier) 负责
@@ -146,6 +144,8 @@ type Bird = {
   vx: number
   vy: number
   phase: number
+  slotX: number
+  slotY: number
   angle: number
   domeX: number
   domeY: number
@@ -156,6 +156,7 @@ type Bird = {
 class SpatialHash {
   private cellSize: number
   private cells = new Map<number, number[]>()
+  private bucketPool: number[][] = []
   private invCellSize: number
 
   constructor(cellSize: number) {
@@ -164,6 +165,10 @@ class SpatialHash {
   }
 
   clear() {
+    for (const bucket of this.cells.values()) {
+      bucket.length = 0
+      this.bucketPool.push(bucket)
+    }
     this.cells.clear()
   }
 
@@ -171,28 +176,18 @@ class SpatialHash {
     const key = this.key(x, y)
     let bucket = this.cells.get(key)
     if (!bucket) {
-      bucket = []
+      bucket = this.bucketPool.pop() ?? []
       this.cells.set(key, bucket)
     }
     bucket.push(index)
   }
 
-  query(x: number, y: number, radius: number, callback: (index: number) => void) {
-    const minCX = Math.floor((x - radius) * this.invCellSize)
-    const maxCX = Math.floor((x + radius) * this.invCellSize)
-    const minCY = Math.floor((y - radius) * this.invCellSize)
-    const maxCY = Math.floor((y + radius) * this.invCellSize)
+  get inverseCellSize() {
+    return this.invCellSize
+  }
 
-    for (let cx = minCX; cx <= maxCX; cx++) {
-      for (let cy = minCY; cy <= maxCY; cy++) {
-        const bucket = this.cells.get(cx * 73856093 ^ cy * 19349663)
-        if (bucket) {
-          for (let k = 0; k < bucket.length; k++) {
-            callback(bucket[k]!)
-          }
-        }
-      }
-    }
+  getBucketAtCell(cx: number, cy: number) {
+    return this.cells.get(cx * 73856093 ^ cy * 19349663)
   }
 
   private key(x: number, y: number): number {
@@ -221,13 +216,12 @@ function getDomeSlot(i: number, count: number): { x: number; y: number; r: numbe
   }
 }
 
-function clampVec(vx: number, vy: number, max: number): [number, number] {
-  const len = Math.sqrt(vx * vx + vy * vy)
-  if (len > max && len > 0) {
-    const s = max / len
-    return [vx * s, vy * s]
-  }
-  return [vx, vy]
+function getClampScale(vx: number, vy: number, max: number) {
+  const lengthSquared = vx * vx + vy * vy
+  const maxSquared = max * max
+  return lengthSquared > maxSquared
+    ? max / Math.sqrt(lengthSquared)
+    : 1
 }
 
 function mix(a: number, b: number, t: number) {
@@ -245,12 +239,18 @@ function lerpAngle(a: number, b: number, t: number) {
 }
 
 function getCenterFacingCapsuleAngle(
-  particleNdcX: number,
-  particleNdcY: number,
+  particleX: number,
+  particleY: number,
+  particleZ: number,
   anchorX: number,
   anchorY: number,
-  aspect: number
+  aspect: number,
+  focalLength: number,
+  cameraZ: number,
 ) {
+  const depth = Math.max(0.001, cameraZ - particleZ)
+  const particleNdcX = particleX * focalLength / (aspect * depth)
+  const particleNdcY = particleY * focalLength / depth
   const dx = (anchorX - particleNdcX) * aspect
   const dy = anchorY - particleNdcY
 
@@ -269,10 +269,13 @@ export class FlockLayer {
   private config: ParticleConfig['flock']
   private elapsed = 0
   private visualIdleProgress = 0
-  private projectionScratch = new Vector3()
   private spatialHash: SpatialHash
+  private waveDir = new Vector2(1, 0)
+  private waveCycle = -1
+  private waveTargetAngle = 0
+  private randomBreatheAmplitude = 0.25
 
-  constructor(scene: Scene, config: ParticleConfig) {
+  constructor(scene: Scene, config: ParticleConfig, pixelRatio: number) {
     this.config = config.flock
     const {
       count, sizeRange, opacity, spectrumSpeed,
@@ -311,6 +314,8 @@ export class FlockLayer {
         vx: 0,
         vy: 0,
         phase,
+        slotX: slot.x,
+        slotY: slot.y,
         angle,
         domeX: domeSlot.x,
         domeY: domeSlot.y,
@@ -332,14 +337,14 @@ export class FlockLayer {
       depthWrite: false,
       blending: NormalBlending,
       uniforms: {
-        uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+        uPixelRatio: { value: pixelRatio },
         uTime: { value: 0 },
         uOpacity: { value: opacity },
         uSpectrumSpeed: { value: spectrumSpeed },
         uIdleProgress: { value: 0 },
         uMinVisualDepth: { value: minVisualDepth },
         uIdleMinVisualDepth: { value: idleMinVisualDepth },
-        uWaveDir: { value: [1.0, 0.0] },
+        uWaveDir: { value: this.waveDir },
         uWaveIntensity: { value: 0 },
         uTargetAngle: { value: 0 },
       },
@@ -366,7 +371,7 @@ export class FlockLayer {
       maxSpeed, maxForce,
       seekWeight, separationWeight, separationRadius,
       alignmentWeight, alignmentRadius, arrivalRadius,
-      obstacleWeight, slotSpacing,
+      obstacleWeight,
       idleStartDelay, idleRampDuration, idleCycleSpeed, idleZRange,
       idleDomeRadius, idleDomeDepth, idleBreatheAmplitude,
       idleBreatheFrequency, idleBreatheSpeed, idleBreatheZAmplitude,
@@ -386,16 +391,29 @@ export class FlockLayer {
     const cosA = Math.cos(anchorAngle)
     const sinA = Math.sin(anchorAngle)
     const domeRotation = this.elapsed * idleDomeRotationSpeed * Math.PI * 2
+    const domeCos = Math.cos(domeRotation)
+    const domeSin = Math.sin(domeRotation)
     
     // 全局波向脉冲（结合颜色 sweep 同步）
     const cycleDuration = 6.0;
     const cycle = Math.floor(this.elapsed / cycleDuration);
     const tCycle = this.elapsed / cycleDuration - cycle;
-    const fract = (n: number) => n - Math.floor(n);
-    const targetAngle = (fract(Math.sin(cycle + 123.45) * 43758.5453123) * 2.0 - 1.0) * Math.PI;
-    
-    const waveDirX = Math.cos(targetAngle);
-    const waveDirY = Math.sin(targetAngle);
+    if (cycle !== this.waveCycle) {
+      const fract = (n: number) => n - Math.floor(n)
+      this.waveCycle = cycle
+      this.waveTargetAngle = (
+        fract(Math.sin(cycle + 123.45) * 43758.5453123) * 2.0 - 1.0
+      ) * Math.PI
+      this.waveDir.set(
+        Math.cos(this.waveTargetAngle),
+        Math.sin(this.waveTargetAngle)
+      )
+      this.randomBreatheAmplitude =
+        0.25 + fract(Math.sin(cycle + 456.78) * 43758.5453123) * 0.15
+    }
+    const targetAngle = this.waveTargetAngle
+    const waveDirX = this.waveDir.x
+    const waveDirY = this.waveDir.y
     
     let waveIntensity = 0.0;
     if (tCycle < 0.2) {
@@ -408,15 +426,11 @@ export class FlockLayer {
       waveIntensity = 1.0 - t * t * (3 - 2 * t);
     }
 
-    this.material.uniforms.uWaveDir!.value = [waveDirX, waveDirY];
     this.material.uniforms.uWaveIntensity!.value = waveIntensity;
     this.material.uniforms.uTargetAngle!.value = targetAngle;
     
-    // 在 25% (0.25) 到 40% (0.40) 之间为当前周期生成一个随机的呼吸缩放比例
-    const randomBreatheAmplitude = 0.25 + fract(Math.sin(cycle + 456.78) * 43758.5453123) * 0.15;
-    
     // 全局整体面积扩张与收缩
-    const globalBreatheMultiplier = 1.0 + waveIntensity * Math.sin(this.elapsed * idleBreatheSpeed * Math.PI * 2) * randomBreatheAmplitude
+    const globalBreatheMultiplier = 1.0 + waveIntensity * Math.sin(this.elapsed * idleBreatheSpeed * Math.PI * 2) * this.randomBreatheAmplitude
 
     // anchor 从 NDC (-1~1) 转到世界坐标（大约 *4）
     const ax = anchorX * 4.0
@@ -427,6 +441,12 @@ export class FlockLayer {
     const activeSeparationWeight = separationWeight * mix(1, 0.45, idleProgress)
     const activeAlignmentWeight = alignmentWeight * (1 - idleProgress * 0.9)
     const activeObstacleWeight = obstacleWeight * (1 - idleProgress * 0.7)
+    const separationRadiusSquared = separationRadius * separationRadius
+    const alignmentRadiusSquared = alignmentRadius * alignmentRadius
+    const hashInvCellSize = this.spatialHash.inverseCellSize
+    const cameraAspect = camera.aspect
+    const cameraFocalLength = 1 / Math.tan(camera.fov * Math.PI / 360)
+    const cameraZ = camera.position.z
 
     this.spatialHash.clear()
     for (let i = 0; i < this.birds.length; i++) {
@@ -439,10 +459,9 @@ export class FlockLayer {
       let fy = 0
 
       // 1. Seek 槽位（含 arrival 减速）
-      const localSlot = getSlot(i, slotSpacing)
       // 旋转队形，朝 anchor 运动方向展开
-      const slotX = ax + localSlot.x * cosA - localSlot.y * sinA
-      const slotY = ay + localSlot.x * sinA + localSlot.y * cosA
+      const slotX = ax + bird.slotX * cosA - bird.slotY * sinA
+      const slotY = ay + bird.slotX * sinA + bird.slotY * cosA
       
       const baseRadius = idleDomeRadius[0] + (idleDomeRadius[1] - idleDomeRadius[0]) * bird.domeR
       
@@ -456,9 +475,8 @@ export class FlockLayer {
       // 缩减个体波动位移：0.3基础抖动，仅在脉冲时增强
       const currentAmplitude = idleBreatheAmplitude * mix(0.2, 0.7, waveIntensity);
       const radius = (baseRadius * bird.radiusJitter + wave * currentAmplitude) * mix(1.0, globalBreatheMultiplier, idleProgress)
-      const currentAngle = Math.atan2(bird.domeY, bird.domeX) + domeRotation
-      const domeX = Math.cos(currentAngle) * radius
-      const domeY = Math.sin(currentAngle) * radius
+      const domeX = (bird.domeX * domeCos - bird.domeY * domeSin) * radius
+      const domeY = (bird.domeX * domeSin + bird.domeY * domeCos) * radius
       
       const idleSlotX = ax + domeX
       const idleSlotY = ay + domeY
@@ -479,27 +497,55 @@ export class FlockLayer {
         const desiredVy = (sdy / sDist) * desiredSpeed
         let steerX = desiredVx - bird.vx
         let steerY = desiredVy - bird.vy
-        ;[steerX, steerY] = clampVec(steerX, steerY, activeMaxForce)
+        const steerScale = getClampScale(steerX, steerY, activeMaxForce)
+        steerX *= steerScale
+        steerY *= steerScale
         fx += steerX * activeSeekWeight
         fy += steerY * activeSeekWeight
       }
 
-      // 2. Separation (空间哈希加速)
+      // 2. Separation + Alignment（一次空间哈希遍历，避免重复查询和回调分配）
       let sepX = 0
       let sepY = 0
       let sepCount = 0
-      this.spatialHash.query(bird.x, bird.y, separationRadius, (j) => {
-        if (i === j) return
-        const other = this.birds[j]!
-        const ddx = bird.x - other.x
-        const ddy = bird.y - other.y
-        const dd = Math.sqrt(ddx * ddx + ddy * ddy)
-        if (dd < separationRadius && dd > 0.001) {
-          sepX += ddx / dd / dd
-          sepY += ddy / dd / dd
-          sepCount++
+      let alignVx = 0
+      let alignVy = 0
+      let alignCount = 0
+      const minCX = Math.floor((bird.x - alignmentRadius) * hashInvCellSize)
+      const maxCX = Math.floor((bird.x + alignmentRadius) * hashInvCellSize)
+      const minCY = Math.floor((bird.y - alignmentRadius) * hashInvCellSize)
+      const maxCY = Math.floor((bird.y + alignmentRadius) * hashInvCellSize)
+
+      for (let cx = minCX; cx <= maxCX; cx++) {
+        for (let cy = minCY; cy <= maxCY; cy++) {
+          const bucket = this.spatialHash.getBucketAtCell(cx, cy)
+          if (!bucket) continue
+
+          for (let k = 0; k < bucket.length; k++) {
+            const j = bucket[k]!
+            if (i === j) continue
+
+            const other = this.birds[j]!
+            const ddx = bird.x - other.x
+            const ddy = bird.y - other.y
+            const distanceSquared = ddx * ddx + ddy * ddy
+
+            if (distanceSquared < separationRadiusSquared && distanceSquared > 0.000001) {
+              const inverseDistance = 1 / Math.sqrt(distanceSquared)
+              sepX += ddx * inverseDistance * inverseDistance
+              sepY += ddy * inverseDistance * inverseDistance
+              sepCount++
+            }
+
+            if (distanceSquared < alignmentRadiusSquared) {
+              alignVx += other.vx
+              alignVy += other.vy
+              alignCount++
+            }
+          }
         }
-      })
+      }
+
       if (sepCount > 0) {
         sepX /= sepCount
         sepY /= sepCount
@@ -507,28 +553,14 @@ export class FlockLayer {
         if (sepLen > 0) {
           sepX = (sepX / sepLen) * activeMaxSpeed - bird.vx
           sepY = (sepY / sepLen) * activeMaxSpeed - bird.vy
-          ;[sepX, sepY] = clampVec(sepX, sepY, activeMaxForce)
+          const sepScale = getClampScale(sepX, sepY, activeMaxForce)
+          sepX *= sepScale
+          sepY *= sepScale
         }
         fx += sepX * activeSeparationWeight
         fy += sepY * activeSeparationWeight
       }
 
-      // 3. Alignment (空间哈希加速)
-      let alignVx = 0
-      let alignVy = 0
-      let alignCount = 0
-      this.spatialHash.query(bird.x, bird.y, alignmentRadius, (j) => {
-        if (i === j) return
-        const other = this.birds[j]!
-        const ddx = bird.x - other.x
-        const ddy = bird.y - other.y
-        const dd = Math.sqrt(ddx * ddx + ddy * ddy)
-        if (dd < alignmentRadius) {
-          alignVx += other.vx
-          alignVy += other.vy
-          alignCount++
-        }
-      })
       if (alignCount > 0) {
         alignVx /= alignCount
         alignVy /= alignCount
@@ -536,7 +568,9 @@ export class FlockLayer {
         if (aLen > 0) {
           let steerX = (alignVx / aLen) * activeMaxSpeed - bird.vx
           let steerY = (alignVy / aLen) * activeMaxSpeed - bird.vy
-          ;[steerX, steerY] = clampVec(steerX, steerY, activeMaxForce)
+          const alignScale = getClampScale(steerX, steerY, activeMaxForce)
+          steerX *= alignScale
+          steerY *= alignScale
           fx += steerX * activeAlignmentWeight
           fy += steerY * activeAlignmentWeight
         }
@@ -592,7 +626,9 @@ export class FlockLayer {
       // 积分
       bird.vx += fx * dt
       bird.vy += fy * dt
-      ;[bird.vx, bird.vy] = clampVec(bird.vx, bird.vy, activeMaxSpeed)
+      const velocityScale = getClampScale(bird.vx, bird.vy, activeMaxSpeed)
+      bird.vx *= velocityScale
+      bird.vy *= velocityScale
 
       bird.x += bird.vx * dt
       bird.y += bird.vy * dt
@@ -612,13 +648,15 @@ export class FlockLayer {
         bird.angle = Math.atan2(bird.vy, bird.vx)
       }
       if (idleProgress > 0.01) {
-        const projected = this.projectionScratch.set(bird.x, bird.y, bird.z).project(camera)
         const centerFacingAngle = getCenterFacingCapsuleAngle(
-          projected.x,
-          projected.y,
+          bird.x,
+          bird.y,
+          bird.z,
           anchorX,
           anchorY,
-          camera.aspect
+          cameraAspect,
+          cameraFocalLength,
+          cameraZ,
         )
         bird.angle = idleProgress > 0.92
           ? centerFacingAngle

@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { type PostListItem } from '@/types/blog';
 import { formatBlogDate, getTagLabel } from '@/lib/blog-shared';
+import { ParticleModeControl } from '@/components/particles/ParticleModeControl';
+import type { ParticleMode } from '@/components/particles/config';
 
 const ParticleBackground = dynamic(
   () => import('@/components/particles/ParticleBackground').then(m => ({ default: m.ParticleBackground })),
@@ -29,6 +32,10 @@ function TextObstacles({ text }: { text: string }) {
 }
 
 export function HomeClient({ posts }: HomeClientProps) {
+  const [particleMode, setParticleMode] = useState<ParticleMode>('flock');
+
+  const isMorph = particleMode === 'morph';
+
   // 分离精选文章与常规文章
   const featuredPost = posts.find((p) => p.featured) || posts[0];
   const recentPosts = posts.filter((p) => p.slug !== featuredPost?.slug).slice(0, 6);
@@ -36,11 +43,15 @@ export function HomeClient({ posts }: HomeClientProps) {
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-6">
       {/* ─── Hero Section ─── */}
-      <section className="relative flex min-h-[620px] flex-col items-center justify-center text-center animate-fade-in py-16">
-        <ParticleBackground />
+      <section className="relative flex min-h-[640px] flex-col items-center justify-center text-center animate-fade-in py-16">
+        <ParticleBackground mode={particleMode} />
         
-        {/* Main Title */}
-        <h1 className="relative z-10 font-heading text-5xl font-bold tracking-[0.25em] md:text-[68px] text-[var(--text-primary)] select-none">
+        {/* Main Title (Hidden only in Morph mode, replaced in-place by particle text) */}
+        <h1 
+          className={`relative z-10 font-heading text-5xl font-bold tracking-[0.25em] md:text-[68px] text-[var(--text-primary)] select-none transition-opacity duration-300 ${
+            isMorph ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+        >
           <TextObstacles text="SnowLine" />
         </h1>
 
@@ -59,7 +70,7 @@ export function HomeClient({ posts }: HomeClientProps) {
         </div>
 
         {/* Tech Focus Tags */}
-        <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-2 max-w-md">
+        <div className="relative z-10 mt-5 flex flex-wrap items-center justify-center gap-2 max-w-md">
           {['Web Graphics', 'Architecture', 'AI Engineering', 'Minimalist UI'].map((tag) => (
             <span
               key={tag}
@@ -72,7 +83,7 @@ export function HomeClient({ posts }: HomeClientProps) {
         </div>
 
         {/* Social & Quick Links */}
-        <div className="relative z-10 mt-8 flex items-center gap-4">
+        <div className="relative z-10 mt-6 flex items-center gap-4">
           <a
             href="https://github.com/Dayang26"
             target="_blank"
@@ -115,6 +126,14 @@ export function HomeClient({ posts }: HomeClientProps) {
             </svg>
             <span>Email</span>
           </a>
+        </div>
+
+        {/* Minimalist Particle Mode Segmented Switcher (Docked at Bottom-Right of Hero) */}
+        <div className="absolute bottom-4 right-4 sm:right-6 z-20">
+          <ParticleModeControl 
+            currentMode={particleMode} 
+            onModeChange={setParticleMode} 
+          />
         </div>
       </section>
 

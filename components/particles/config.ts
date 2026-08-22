@@ -1,7 +1,8 @@
 /**
- * 粒子系统集中配置
- * 保留了 Flock 层和 Camera 层，移除了纯背景粒子和随机障碍物
+ * 粒子系统集中配置与模式定义
  */
+
+export type ParticleMode = 'flock' | 'vortex' | 'morph' | 'fireworks';
 
 export type ParticleConfig = {
   /** 是否启用粒子系统 */

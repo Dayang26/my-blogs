@@ -1,5 +1,5 @@
 /**
- * Three.js 场景初始化、渲染循环、层级整合
+ * Three.js 场景初始化、渲染循环、层级整合与模式控制
  */
 
 import {
@@ -7,13 +7,14 @@ import {
   PerspectiveCamera,
   WebGLRenderer,
 } from 'three'
-import { getConfig } from './config'
+import { getConfig, type ParticleMode } from './config'
 import { Pointer } from './pointer'
 import { FlockLayer } from './flock-layer'
 import { DomObstacles } from './dom-obstacles'
 
 export type RendererContext = {
   dispose: () => void
+  setMode: (mode: ParticleMode) => void
 }
 
 export function initRenderer(
@@ -110,7 +111,7 @@ export function initRenderer(
     // 更新输入
     pointer.update(dt)
 
-    // 事件驱动更新 DOM 障碍物真实位置（内部有 dirty guard）
+    // 事件驱动更新 DOM 障碍物真实位置
     domObstacles.update()
 
     // 更新各层
@@ -131,6 +132,9 @@ export function initRenderer(
   animId = requestAnimationFrame(tick)
 
   return {
+    setMode(mode: ParticleMode) {
+      flockLayer.setMode(mode)
+    },
     dispose() {
       disposed = true
       cancelAnimationFrame(animId)

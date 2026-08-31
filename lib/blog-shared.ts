@@ -20,11 +20,10 @@ export const tagLabels: Record<string, string> = {
 
 export const formatBlogDate = (value?: string) => {
   if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}.${month}.${day}`;
+  // 直接字符串截取，避免 new Date('YYYY-MM-DD') 按 UTC 解析导致的时区偏移
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return value;
+  return `${match[1]}.${match[2]}.${match[3]}`;
 };
 
 export const getTagLabel = (tag: string) => {

@@ -18,8 +18,10 @@ const getEmbedUrl = (url: string): string | null => {
       return `https://www.youtube.com/embed${parsed.pathname}`;
     }
     if (parsed.hostname === 'www.bilibili.com' || parsed.hostname === 'bilibili.com') {
-      const match = parsed.pathname.match(/\/video\/(BV\w+|av\d+)/);
-      if (match) return `https://player.bilibili.com/player.html?bvid=${match[1]}&high_quality=1`;
+      const bv = parsed.pathname.match(/\/video\/(BV\w+)/);
+      if (bv) return `https://player.bilibili.com/player.html?bvid=${bv[1]}&high_quality=1`;
+      const av = parsed.pathname.match(/\/video\/av(\d+)/);
+      if (av) return `https://player.bilibili.com/player.html?aid=${av[1]}&high_quality=1`;
     }
     if (parsed.hostname === 'vimeo.com') {
       return `https://player.vimeo.com/video${parsed.pathname}`;
@@ -51,6 +53,7 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
           <iframe
             src={embedUrl}
             title={title ?? 'Embedded video'}
+            loading="lazy"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
             className="absolute inset-0 h-full w-full"

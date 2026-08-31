@@ -14,8 +14,6 @@ export function ParticleBackground({ mode = 'flock' }: { mode?: ParticleMode }) 
     const container = containerRef.current
     if (!canvas || !container) return
 
-    let disposed = false
-
     const syncViewportWidth = () => {
       container.style.width = `${document.documentElement.clientWidth}px`
     }
@@ -23,30 +21,15 @@ export function ParticleBackground({ mode = 'flock' }: { mode?: ParticleMode }) 
     syncViewportWidth()
     window.addEventListener('resize', syncViewportWidth)
 
-    if (!disposed) {
-      const ctx = initRenderer(canvas, container)
-      ctxRef.current = ctx
-      if (ctx) {
-        ctx.setMode(mode)
-      }
-    }
-
-    const handleCustomMode = (e: CustomEvent<{ mode: ParticleMode }>) => {
-      if (e.detail?.mode && ctxRef.current) {
-        ctxRef.current.setMode(e.detail.mode)
-      }
-    }
-
-    window.addEventListener('change-particle-mode' as string, handleCustomMode as EventListener)
+    // 仅初始化一次；mode 变更由下方 effect 处理，避免重建 WebGL context
+    ctxRef.current = initRenderer(canvas, container)
 
     return () => {
-      disposed = true
       window.removeEventListener('resize', syncViewportWidth)
-      window.removeEventListener('change-particle-mode' as string, handleCustomMode as EventListener)
       ctxRef.current?.dispose()
       ctxRef.current = null
     }
-  }, [mode])
+  }, [])
 
   useEffect(() => {
     if (ctxRef.current) {

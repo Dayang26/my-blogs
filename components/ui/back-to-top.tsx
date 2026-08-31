@@ -7,20 +7,22 @@ export function BackToTop() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
-      const currentScroll = window.scrollY;
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const currentScroll = window.scrollY;
 
-      if (currentScroll > 300) {
-        setVisible(true);
-      } else {
-        setVisible(false);
-      }
+        setVisible(currentScroll > 300);
 
-      if (totalScroll > 0) {
-        const progress = (currentScroll / totalScroll) * 100;
-        setScrollProgress(Math.min(100, Math.max(0, progress)));
-      }
+        if (totalScroll > 0) {
+          const progress = (currentScroll / totalScroll) * 100;
+          setScrollProgress(Math.min(100, Math.max(0, progress)));
+        }
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -45,7 +47,7 @@ export function BackToTop() {
     <button
       type="button"
       onClick={scrollToTop}
-      className="fixed bottom-8 right-8 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[var(--accent)] hover:text-[var(--accent)] animate-fade-in focus:outline-none"
+      className="fixed bottom-8 right-8 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[var(--accent)] hover:text-[var(--accent)] animate-fade-in focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       aria-label="返回顶部"
       title={`已阅读 ${Math.round(scrollProgress)}% - 点击返回顶部`}
     >

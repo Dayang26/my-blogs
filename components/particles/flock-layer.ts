@@ -360,7 +360,7 @@ export class FlockLayer {
 
       const vRadius = 0.4 + Math.random() * 2.8
       const vAngle = Math.random() * Math.PI * 2
-      const vSpeed = (1.8 + Math.random() * 2.2) * (Math.random() > 0.5 ? 1 : 1)
+      const vSpeed = (1.8 + Math.random() * 2.2) * (Math.random() > 0.5 ? 1 : -1)
 
       this.birds.push({
         x,
@@ -382,6 +382,21 @@ export class FlockLayer {
         vortexRadius: vRadius,
         vortexAngle: vAngle,
         vortexSpeed: vSpeed,
+      })
+    }
+
+    // 字体加载完成后重新生成文字槽位，避免字形回退导致 morph 形状错误
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(() => {
+        if (this.disposed) return
+        const slots = generateTextSlots('SNOWLINE', count)
+        this.birds.forEach((bird, i) => {
+          const slot = slots[i]
+          if (slot) {
+            bird.morphX = slot.x
+            bird.morphY = slot.y
+          }
+        })
       })
     }
 
@@ -846,7 +861,10 @@ export class FlockLayer {
     this.material.uniforms.uIdleProgress!.value = idleProgress
   }
 
+  private disposed = false
+
   dispose() {
+    this.disposed = true
     this.geometry.dispose()
     this.material.dispose()
   }

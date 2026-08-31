@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { type PostEntity, type PostListItem } from '@/types/blog';
 import { formatBlogDate, getTagLabel } from '@/lib/blog-shared';
@@ -8,8 +9,40 @@ import { MDXContent } from '@/components/mdx-content';
 import { TableOfContents } from './TableOfContents';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { useTheme } from '@/components/theme/ThemeProvider';
-import Giscus from '@giscus/react';
 import { giscusConfig } from '@/lib/giscus-config';
+
+const Giscus = dynamic(() => import('@giscus/react'), { ssr: false });
+
+// 独立的阅读进度条：滚动状态隔离在此小组件内，避免整页（含 MDX 树）随滚动 re-render
+function ReadingProgressBar() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+        if (totalScroll > 0) {
+          const current = (window.scrollY / totalScroll) * 100;
+          setProgress(Math.min(100, Math.max(0, current)));
+        }
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div
+      className="fixed left-0 top-0 z-50 h-[2px] bg-[var(--accent)] transition-[width] duration-75 ease-out"
+      style={{ width: `${progress}%` }}
+    />
+  );
+}
 
 type BlogPostClientProps = {
   post: PostEntity;
@@ -19,22 +52,8 @@ type BlogPostClientProps = {
 };
 
 export default function BlogPostClient({ post, prev, next, related }: BlogPostClientProps) {
-  const [progress, setProgress] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
   const { resolvedTheme } = useTheme();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalScroll > 0) {
-        const current = (window.scrollY / totalScroll) * 100;
-        setProgress(Math.min(100, Math.max(0, current)));
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleCopyLink = async () => {
     try {
@@ -49,10 +68,7 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
   return (
     <div className="mx-auto flex w-full max-w-[1120px] justify-center px-6 py-10 md:py-16">
       {/* Top 2px Reading Progress Bar */}
-      <div
-        className="fixed left-0 top-0 z-50 h-[2px] bg-[var(--accent)] transition-[width] duration-75 ease-out"
-        style={{ width: `${progress}%` }}
-      />
+      <ReadingProgressBar />
 
       <div className="flex w-full max-w-[760px] flex-col">
         {/* Navigation back and quick action */}
@@ -184,9 +200,8 @@ export default function BlogPostClient({ post, prev, next, related }: BlogPostCl
             评论交流
           </h3>
           {giscusConfig.repoId && giscusConfig.categoryId ? (
-            <Giscus 
-              key={`${post.slug}-${resolvedTheme}`} 
-              {...giscusConfig} 
+            <Giscus
+              {...giscusConfig}
               theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
             />
           ) : (

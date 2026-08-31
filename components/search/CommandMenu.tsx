@@ -14,15 +14,18 @@ export function CommandMenu() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 加载搜索索引
+  // 首次打开时才加载搜索索引（懒加载）
+  const hasFetchedRef = useRef(false);
   useEffect(() => {
+    if (!isOpen || hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     fetch('/searchIndex.json')
       .then((res) => (res.ok ? res.json() : []))
       .then((data: SearchIndexItem[]) => {
         setItems(data);
       })
       .catch((err) => console.warn('CommandMenu search index error:', err));
-  }, []);
+  }, [isOpen]);
 
   const openMenu = () => {
     setIsOpen(true);
@@ -116,18 +119,48 @@ export function CommandMenu() {
     }
   };
 
-  if (!isOpen) return null;
-
   const currentActiveIndex = Math.min(selectedIndex, Math.max(0, filteredItems.length - 1));
 
+  // 键盘选中项滚动进可视区域
+  useEffect(() => {
+    if (!isOpen) return;
+    listRef.current
+      ?.querySelector(`[data-option-index="${currentActiveIndex}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [isOpen, currentActiveIndex]);
+
+  // 简单焦点陷阱：Tab 在弹层内循环
+  const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab') return;
+    const focusable = e.currentTarget.querySelectorAll<HTMLElement>(
+      'input, button, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last?.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first?.focus();
+    }
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-28 px-4 bg-black/50 backdrop-blur-sm animate-fade-in"
       onClick={closeMenu}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="全站搜索"
         className="w-full max-w-[620px] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl transition-all"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleDialogKeyDown}
       >
         {/* Search Input Bar */}
         <div className="flex items-center border-b border-[var(--border)] px-4 py-3">
@@ -163,7 +196,12 @@ export function CommandMenu() {
         </div>
 
         {/* Results List */}
-        <div ref={listRef} className="max-h-[380px] overflow-y-auto p-2">
+        <div
+          ref={listRef}
+          role="listbox"
+          aria-activedescendant={`search-option-${currentActiveIndex}`}
+          className="max-h-[380px] overflow-y-auto p-2"
+        >
           {filteredItems.length > 0 ? (
             <div className="flex flex-col gap-1">
               <div className="px-3 py-1.5 font-mono text-[11px] font-medium tracking-wider text-[var(--text-muted)] uppercase">
@@ -174,6 +212,10 @@ export function CommandMenu() {
                 return (
                   <button
                     key={item.slug}
+                    id={`search-option-${idx}`}
+                    data-option-index={idx}
+                    role="option"
+                    aria-selected={isSelected}
                     type="button"
                     onClick={() => handleSelect(item.slug)}
                     onMouseEnter={() => setSelectedIndex(idx)}

@@ -4,6 +4,5 @@ export const giscusConfig = {
   category: process.env.NEXT_PUBLIC_GISCUS_CATEGORY ?? '',
   categoryId: process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID ?? '',
   mapping: 'pathname' as const,
-  theme: 'light',
   lang: 'zh-CN',
 };

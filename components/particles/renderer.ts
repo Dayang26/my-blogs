@@ -148,6 +148,7 @@ export function initRenderer(
       domObstacles.dispose()
 
       renderer.dispose()
+      renderer.forceContextLoss()
     },
   }
 }

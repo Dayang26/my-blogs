@@ -18,11 +18,11 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const post = getPostBySlug(slug);
   if (!post) {
-    return { title: 'Blog — SnowLine' };
+    return { title: '文章不存在' };
   }
   const url = `/blog/${post.slug}`;
   return {
-    title: `${post.title} — SnowLine`,
+    title: post.title,
     description: post.excerpt,
     openGraph: {
       title: post.title,
@@ -45,7 +45,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
   const post = getPostBySlug(slug);
 
-  if (!post || !post.slug) {
+  if (!post) {
     notFound();
   }
 

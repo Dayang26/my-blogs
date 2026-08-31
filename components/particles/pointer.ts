@@ -33,9 +33,19 @@ export class Pointer {
   private lastClientX: number | null = null
   private lastClientY: number | null = null
 
+  private rectCache: DOMRect | null = null
+
+  private onInvalidateRect = () => {
+    this.rectCache = null
+  }
+
   constructor(private container: HTMLElement) {
     const updateFromClient = (clientX: number, clientY: number) => {
-      const rect = container.getBoundingClientRect()
+      // 缓存 rect，避免高频 mousemove 下每次强制同步 layout
+      if (!this.rectCache) {
+        this.rectCache = container.getBoundingClientRect()
+      }
+      const rect = this.rectCache
       this.rawX = ((clientX - rect.left) / rect.width) * 2 - 1
       this.rawY = -((clientY - rect.top) / rect.height) * 2 + 1
       this.active = true
@@ -84,6 +94,8 @@ export class Pointer {
     container.addEventListener('touchmove', this.onTouchMove, { passive: true })
     container.addEventListener('touchend', this.onTouchEnd)
     container.addEventListener('touchcancel', this.onTouchEnd)
+    window.addEventListener('resize', this.onInvalidateRect, { passive: true })
+    window.addEventListener('scroll', this.onInvalidateRect, { passive: true })
   }
 
   update(dt: number) {
@@ -146,5 +158,7 @@ export class Pointer {
     this.container.removeEventListener('touchmove', this.onTouchMove)
     this.container.removeEventListener('touchend', this.onTouchEnd)
     this.container.removeEventListener('touchcancel', this.onTouchEnd)
+    window.removeEventListener('resize', this.onInvalidateRect)
+    window.removeEventListener('scroll', this.onInvalidateRect)
   }
 }

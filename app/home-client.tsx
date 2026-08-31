@@ -38,7 +38,7 @@ export function HomeClient({ posts }: HomeClientProps) {
 
   // 分离精选文章与常规文章
   const featuredPost = posts.find((p) => p.featured) || posts[0];
-  const recentPosts = posts.filter((p) => p.slug !== featuredPost?.slug).slice(0, 6);
+  const recentPosts = posts.filter((p) => p.slug !== featuredPost?.slug).slice(0, 5);
 
   return (
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-6">

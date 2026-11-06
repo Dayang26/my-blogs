@@ -15,6 +15,10 @@ excerpt: 抓取与抛掷的手感，来自摩擦、质量与冲量的配比。
 
 ## 示例
 
-```
+```ts title="physics/impulse.ts"
 const impulse = Math.min(pinchStrength * 1.4, 1.0);
 ```
+
+<Callout type="warning" title="调参注意事项">
+当刚体移动速度过快时可能发生穿透（Tunneling），建议对高速运动物体开启连续碰撞检测（CCD）。
+</Callout>

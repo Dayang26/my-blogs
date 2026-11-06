@@ -11,8 +11,12 @@ excerpt: 在不引入 Canvas 的情况下，用 CSS 动效实现落雪。
 
 ## 代码片段
 
-```
+```css title="styles/snow.css"
 @keyframes snow {
   to { transform: translateY(120px); }
 }
 ```
+
+<Callout type="tip" title="性能建议">
+通过 `will-change: transform` 提示浏览器创建独立合成图层，能够避免主线程重排，大幅降低 CPU 开销。
+</Callout>

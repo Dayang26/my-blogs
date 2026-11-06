@@ -5,10 +5,12 @@ import * as runtime from 'react/jsx-runtime';
 import type { ComponentType } from 'react';
 import { Video } from './mdx/video';
 import { Pre } from './mdx/pre';
+import { Callout } from './mdx/callout';
 
 const sharedComponents: MDXComponents = {
   Video: Video as ComponentType<{ children?: React.ReactNode }>,
   pre: Pre as unknown as ComponentType<{ children?: React.ReactNode }>,
+  Callout: Callout as unknown as ComponentType<{ children?: React.ReactNode }>,
 };
 
 

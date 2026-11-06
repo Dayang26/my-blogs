@@ -32,9 +32,10 @@ function TextObstacles({ text }: { text: string }) {
 }
 
 export function HomeClient({ posts }: HomeClientProps) {
+  const [particlesEnabled, setParticlesEnabled] = useState(false);
   const [particleMode, setParticleMode] = useState<ParticleMode>('flock');
 
-  const isMorph = particleMode === 'morph';
+  const isMorph = particlesEnabled && particleMode === 'morph';
 
   // 分离精选文章与常规文章
   const featuredPost = posts.find((p) => p.featured) || posts[0];
@@ -44,7 +45,7 @@ export function HomeClient({ posts }: HomeClientProps) {
     <div className="mx-auto flex w-full max-w-[1200px] flex-col px-6">
       {/* ─── Hero Section ─── */}
       <section className="relative flex min-h-[640px] flex-col items-center justify-center text-center animate-fade-in py-16">
-        <ParticleBackground mode={particleMode} />
+        {particlesEnabled && <ParticleBackground mode={particleMode} />}
         
         {/* Main Title (Hidden only in Morph mode, replaced in-place by particle text) */}
         <h1 
@@ -131,7 +132,9 @@ export function HomeClient({ posts }: HomeClientProps) {
         {/* Minimalist Particle Mode Segmented Switcher (Docked at Bottom-Right of Hero) */}
         <div className="absolute bottom-4 right-4 sm:right-6 z-20">
           <ParticleModeControl 
+            enabled={particlesEnabled}
             currentMode={particleMode} 
+            onToggle={() => setParticlesEnabled(prev => !prev)}
             onModeChange={setParticleMode} 
           />
         </div>

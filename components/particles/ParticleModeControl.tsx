@@ -18,12 +18,21 @@ const MODES: ModeItem[] = [
 ];
 
 type ParticleModeControlProps = {
+  enabled: boolean;
   currentMode: ParticleMode;
+  onToggle: () => void;
   onModeChange: (mode: ParticleMode) => void;
 };
 
-export function ParticleModeControl({ currentMode, onModeChange }: ParticleModeControlProps) {
+export function ParticleModeControl({ 
+  enabled, 
+  currentMode, 
+  onToggle, 
+  onModeChange 
+}: ParticleModeControlProps) {
   useEffect(() => {
+    if (!enabled) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return;
@@ -36,11 +45,25 @@ export function ParticleModeControl({ currentMode, onModeChange }: ParticleModeC
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onModeChange]);
+  }, [enabled, onModeChange]);
+
+  if (!enabled) {
+    return (
+      <button
+        type="button"
+        onClick={onToggle}
+        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)]/75 px-3 py-1 font-mono text-[11px] font-medium text-[var(--text-muted)] backdrop-blur-md shadow-sm transition-all duration-200 hover:text-[var(--text-primary)] hover:border-[var(--accent)] hover:bg-[var(--surface-hover)] select-none opacity-80 hover:opacity-100"
+        title="开启背景粒子动效"
+      >
+        <span className="text-[10px] text-[var(--accent)]">✦</span>
+        <span>开启动效</span>
+      </button>
+    );
+  }
 
   return (
     <div 
-      className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--surface)]/75 p-0.5 backdrop-blur-md shadow-sm opacity-65 hover:opacity-100 transition-opacity duration-200 select-none"
+      className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--surface)]/80 p-0.5 backdrop-blur-md shadow-sm transition-opacity duration-200 select-none animate-fade-in"
       role="tablist"
       aria-label="Particle mode switch"
     >
@@ -67,6 +90,21 @@ export function ParticleModeControl({ currentMode, onModeChange }: ParticleModeC
           </button>
         );
       })}
+
+      <div className="mx-1 h-3 w-px bg-[var(--border)]" />
+
+      <button
+        type="button"
+        onClick={onToggle}
+        title="关闭粒子特效"
+        className="flex items-center justify-center rounded-full p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-all duration-200"
+        aria-label="关闭粒子动效"
+      >
+        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
   );
 }

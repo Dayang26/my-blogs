@@ -12,7 +12,7 @@ export function ThemeToggle() {
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
 
   if (!mounted) {
-    return <div className="h-8 w-8" />;
+    return <div className="h-8 w-8" aria-hidden="true" />;
   }
 
   const isDark = resolvedTheme === 'dark';
@@ -25,12 +25,11 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="relative flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      className="relative flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-secondary)] transition-all duration-200 hover:bg-[var(--surface-hover)] hover:text-[var(--accent)] active:scale-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       aria-label={isDark ? '切换至明亮模式' : '切换至暗黑模式'}
       title={isDark ? '切换至明亮模式' : '切换至暗黑模式'}
     >
       {isDark ? (
-        // Sun Icon
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -39,7 +38,8 @@ export function ThemeToggle() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="h-4 w-4 transition-transform duration-300 rotate-0 hover:rotate-45"
+          className="h-4 w-4 transition-transform duration-300 hover:rotate-45"
+          aria-hidden="true"
         >
           <circle cx="12" cy="12" r="4" />
           <path d="M12 2v2" />
@@ -52,7 +52,6 @@ export function ThemeToggle() {
           <path d="m19.07 4.93-1.41 1.41" />
         </svg>
       ) : (
-        // Moon Icon
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
@@ -62,6 +61,7 @@ export function ThemeToggle() {
           strokeLinecap="round"
           strokeLinejoin="round"
           className="h-4 w-4 transition-transform duration-300 -rotate-12 hover:rotate-0"
+          aria-hidden="true"
         >
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
         </svg>

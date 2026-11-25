@@ -65,17 +65,20 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
+        <meta name="color-scheme" content="light dark" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body
         className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased relative min-h-screen bg-[var(--bg)] text-[var(--text-primary)] selection:bg-[var(--accent-subtle)] selection:text-[var(--accent)]`}
       >
         <ThemeProvider>
-          {/* Subtle grid background */}
-          <div 
-            className="pointer-events-none fixed inset-0 z-0 bg-grid-pattern opacity-100" 
-            aria-hidden="true" 
-          />
+          {/* Atmospheric Aurora Canvas for Liquid Glass Refraction */}
+          <div className="aurora-canvas" aria-hidden="true">
+            <div className="aurora-orb aurora-orb-1" />
+            <div className="aurora-orb aurora-orb-2" />
+            <div className="aurora-orb aurora-orb-3" />
+            <div className="absolute inset-0 bg-subtle-dots opacity-50" />
+          </div>
           <div className="relative z-10 flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>

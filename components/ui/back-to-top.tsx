@@ -38,7 +38,6 @@ export function BackToTop() {
 
   if (!visible) return null;
 
-  // SVG circle math
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
@@ -47,22 +46,20 @@ export function BackToTop() {
     <button
       type="button"
       onClick={scrollToTop}
-      className="fixed bottom-8 right-8 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] shadow-lg backdrop-blur-md transition-all duration-300 hover:scale-110 hover:border-[var(--accent)] hover:text-[var(--accent)] animate-fade-in focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+      className="glass-pill fixed bottom-7 right-6 sm:right-8 z-40 flex h-11 w-11 items-center justify-center rounded-full text-[var(--text-primary)] transition-all duration-300 hover:scale-110 hover:text-[var(--accent)] active:scale-95 animate-fade-in focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
       aria-label="返回顶部"
       title={`已阅读 ${Math.round(scrollProgress)}% - 点击返回顶部`}
     >
-      <svg className="absolute inset-0 -rotate-90" width="44" height="44">
-        {/* Background track */}
+      <svg className="absolute inset-0 -rotate-90" width="44" height="44" aria-hidden="true">
         <circle
           cx="22"
           cy="22"
           r={radius}
           fill="none"
-          stroke="var(--border)"
+          stroke="var(--text-muted)"
           strokeWidth="2"
-          opacity="0.5"
+          opacity="0.28"
         />
-        {/* Progress track */}
         <circle
           cx="22"
           cy="22"
@@ -76,13 +73,13 @@ export function BackToTop() {
           className="transition-all duration-150"
         />
       </svg>
-      {/* Up arrow */}
       <svg
         className="relative z-10 h-4 w-4"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"

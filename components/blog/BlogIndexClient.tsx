@@ -29,7 +29,9 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
       setDebouncedQuery(query);
       setVisibleCount(PAGE_SIZE);
     }, 200);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [query]);
 
   useEffect(() => {
@@ -42,8 +44,12 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
         setIndexItems(data);
         setIndexReady(true);
       })
-      .catch((err) => { console.warn('Search index unavailable:', err); });
-    return () => { mounted = false; };
+      .catch((err) => {
+        console.warn('Search index unavailable:', err);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const resetVisible = () => setVisibleCount(PAGE_SIZE);
@@ -53,10 +59,8 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
   const filteredItems = useMemo(() => {
     if (!indexReady) return [];
     const normalizedQuery = debouncedQuery.trim().toLowerCase();
-    
-    const items = indexItems;
 
-    const filtered = items.filter((item) => {
+    const filtered = indexItems.filter((item) => {
       if (activeTag !== 'All' && !item.tags.includes(activeTag)) return false;
       if (normalizedQuery && !item.searchText.includes(normalizedQuery)) return false;
       return true;
@@ -78,35 +82,61 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
   const canLoadMore = indexReady ? filteredItems.length > visibleCount : posts.length > visibleCount;
 
   return (
-    <div className="mx-auto flex w-full max-w-[860px] flex-col px-6 py-10 md:py-16">
-      {/* Header with Title and Search/Sort */}
-      <header className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-[var(--text-primary)] md:text-4xl">
-            所有文章
-          </h1>
-          <p className="mt-2 font-sans text-sm text-[var(--text-secondary)]">
-            关于 Web 前端、交互体验与技术工程的深度探索与实践思考
-          </p>
+    <div className="mx-auto flex w-full max-w-[920px] flex-col px-6 py-10 md:py-16">
+      {/* Page Header */}
+      <header className="mb-8 flex flex-col gap-3 px-1">
+        <div className="inline-flex w-fit items-center gap-2 rounded-full glass-pill px-3 py-1 font-mono text-[11px] font-medium text-[var(--accent)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />
+          <span>Archive · {posts.length} 篇文章</span>
         </div>
-        
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center md:w-auto">
-          {/* Quick Search in Page */}
-          <div className="relative flex-1 sm:w-60">
+        <h1 className="font-heading text-3xl font-bold tracking-tight text-balance text-[var(--text-primary)] md:text-4xl">
+          所有文章
+        </h1>
+        <p className="font-sans text-sm md:text-base text-[var(--text-secondary)]">
+          关于 Web 前端、交互体验与技术工程的深度探索与实践思考
+        </p>
+      </header>
+
+      {/* Unified Glass Control Deck: Search + Sort + Tags */}
+      <section className="mb-8 flex flex-col gap-4 rounded-3xl glass-card p-4 sm:p-5 z-20">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Quick Search Input */}
+          <div className="relative flex-1">
+            <svg
+              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
             <input
               type="search"
               value={query}
-              onChange={(e) => { setQuery(e.target.value); }}
-              placeholder="快速过滤文章..."
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 font-sans text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-colors focus:border-[var(--accent)]"
+              onChange={(e) => {
+                setQuery(e.target.value);
+              }}
+              placeholder="快速过滤文章标题或内容..."
+              aria-label="快速过滤文章"
+              className="w-full rounded-full border border-[var(--border)] bg-[var(--surface)]/70 py-2 pl-10 pr-4 font-sans text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] outline-none transition-all focus:border-[var(--accent)]/60 focus:bg-[var(--surface-hover)] focus:ring-2 focus:ring-[var(--accent-subtle)]"
             />
           </div>
-          
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="font-sans text-xs text-[var(--text-secondary)]">排序:</span>
+
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <span className="font-sans text-xs text-[var(--text-muted)]">排序</span>
             <CustomSelect
               value={sortBy}
-              onChange={(value) => { setSortBy(value as 'latest' | 'oldest' | 'read'); resetVisible(); }}
+              onChange={(value) => {
+                setSortBy(value as 'latest' | 'oldest' | 'read');
+                resetVisible();
+              }}
               options={[
                 { value: 'latest', label: '最新发布' },
                 { value: 'oldest', label: '最早发布' },
@@ -115,27 +145,31 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
             />
           </div>
         </div>
-      </header>
 
-      {/* Tag Filters */}
-      <section className="mb-8 flex flex-wrap gap-2 border-b border-[var(--border)] pb-5">
-        {tags.map((tag) => {
-          const isActive = activeTag === tag;
-          return (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => { setActiveTag(tag); resetVisible(); }}
-              className={`rounded-full px-3 py-1 font-mono text-xs transition-all ${
-                isActive
-                  ? 'bg-[var(--accent)] text-white font-medium shadow-sm'
-                  : 'bg-[var(--surface)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {getTagLabel(tag)}
-            </button>
-          );
-        })}
+        {/* Tag Filters */}
+        <div className="flex flex-wrap gap-2 pt-1" role="group" aria-label="文章分类筛选">
+          {tags.map((tag) => {
+            const isActive = activeTag === tag;
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => {
+                  setActiveTag(tag);
+                  resetVisible();
+                }}
+                aria-pressed={isActive}
+                className={`rounded-full px-3.5 py-1 font-mono text-xs transition-all duration-200 active:scale-95 ${
+                  isActive
+                    ? 'bg-[var(--accent)] text-[var(--accent-fg)] font-semibold shadow-[0_4px_14px_-2px_var(--accent-glow),inset_0_1px_0_rgba(255,255,255,0.35)]'
+                    : 'border border-[var(--border)] bg-[var(--surface)]/70 text-[var(--text-secondary)] hover:border-[var(--accent)]/40 hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {getTagLabel(tag)}
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       {/* Articles Cards Stream */}
@@ -144,15 +178,15 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
           <Link
             key={post.slug}
             href={`/blog/${post.slug}`}
-            className="group flex flex-col gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--card-shadow)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--accent)] hover:shadow-[var(--card-shadow-hover)] animate-fade-in"
+            className="group flex flex-col gap-3 rounded-3xl glass-card glass-card-interactive p-6 animate-fade-in"
             style={{ animationDelay: `${index * 30}ms` }}
           >
             <div className="flex items-center justify-between font-mono text-xs text-[var(--text-muted)]">
               <span>{formatBlogDate(post.date)}</span>
-              <span>{post.readMinutes} 分钟阅读</span>
+              <span className="rounded-full bg-[var(--surface)]/70 px-2.5 py-0.5">{post.readMinutes} 分钟阅读</span>
             </div>
 
-            <h2 className="font-heading text-lg font-bold text-[var(--text-primary)] transition-colors group-hover:text-[var(--accent)]">
+            <h2 className="font-heading text-lg sm:text-xl font-bold text-balance text-[var(--text-primary)] transition-colors duration-200 group-hover:text-[var(--accent)]">
               {post.title}
             </h2>
 
@@ -160,23 +194,27 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
               {post.excerpt}
             </p>
 
-            <div className="mt-2 flex items-center justify-between border-t border-[var(--border)]/50 pt-3">
-              <div className="flex flex-wrap gap-2 font-mono text-[11px] text-[var(--accent)]">
+            <div className="mt-1 flex items-center justify-between pt-1">
+              <div className="flex flex-wrap gap-1.5 font-mono text-[11px] text-[var(--accent)]">
                 {post.tags.map((tag: string) => (
-                  <span key={tag} className="rounded bg-[var(--accent-subtle)] px-2 py-0.5 font-medium">
+                  <span
+                    key={tag}
+                    className="rounded-full bg-[var(--accent-subtle)] px-2.5 py-0.5 font-medium"
+                  >
                     #{getTagLabel(tag)}
                   </span>
                 ))}
               </div>
-              <span className="font-sans text-xs font-semibold text-[var(--text-muted)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[var(--accent)]">
-                阅读全文 →
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface)]/70 px-3 py-1 font-sans text-xs font-medium text-[var(--text-secondary)] transition-all duration-200 group-hover:bg-[var(--accent-subtle)] group-hover:text-[var(--accent)]">
+                <span>阅读全文</span>
+                <span className="transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden="true">→</span>
               </span>
             </div>
           </Link>
         ))}
 
         {indexReady && visiblePosts.length === 0 && (
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] py-16 text-center font-sans text-sm text-[var(--text-muted)]">
+          <div className="rounded-3xl glass-card py-16 text-center font-sans text-sm text-[var(--text-muted)]">
             没有找到与您的筛选条件匹配的文章
           </div>
         )}
@@ -188,7 +226,7 @@ export default function BlogIndexClient({ posts, tags }: BlogIndexProps) {
           <button
             type="button"
             onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-            className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-6 py-2.5 font-sans text-sm font-medium text-[var(--accent)] shadow-sm transition-all hover:border-[var(--accent)] hover:shadow-md"
+            className="glass-button rounded-full px-7 py-2.5 font-sans text-sm font-medium text-[var(--accent)]"
           >
             加载更多文章
           </button>

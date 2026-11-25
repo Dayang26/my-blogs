@@ -49,17 +49,19 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
   if (embedUrl) {
     return (
       <figure className="my-6">
-        <div className={`relative w-full ${aspectClass} overflow-hidden rounded border border-[var(--border)] bg-[var(--code-bg)]`}>
-          <iframe
-            src={embedUrl}
-            title={title ?? 'Embedded video'}
-            loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 h-full w-full"
-          />
+        <div className="rounded-3xl glass-card p-1.5">
+          <div className={`relative w-full ${aspectClass} overflow-hidden rounded-2xl bg-[var(--code-bg)]`}>
+            <iframe
+              src={embedUrl}
+              title={title ?? 'Embedded video'}
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
         </div>
-        {title && <figcaption className="mt-2 text-center text-xs text-[var(--text-muted)]">{title}</figcaption>}
+        {title && <figcaption className="mt-2.5 text-center text-xs text-[var(--text-muted)]">{title}</figcaption>}
       </figure>
     );
   }
@@ -67,22 +69,24 @@ export function Video({ src, title, poster, aspectRatio = '16/9' }: VideoProps) 
   if (isFile) {
     return (
       <figure className="my-6">
-        <div className={`relative w-full ${aspectClass} overflow-hidden rounded border border-[var(--border)] bg-[var(--code-bg)]`}>
-          <video
-            src={src}
-            poster={poster}
-            controls
-            playsInline
-            className="h-full w-full object-contain"
-          />
+        <div className="rounded-3xl glass-card p-1.5">
+          <div className={`relative w-full ${aspectClass} overflow-hidden rounded-2xl bg-[var(--code-bg)]`}>
+            <video
+              src={src}
+              poster={poster}
+              controls
+              playsInline
+              className="h-full w-full object-contain"
+            />
+          </div>
         </div>
-        {title && <figcaption className="mt-2 text-center text-xs text-[var(--text-muted)]">{title}</figcaption>}
+        {title && <figcaption className="mt-2.5 text-center text-xs text-[var(--text-muted)]">{title}</figcaption>}
       </figure>
     );
   }
 
   return (
-    <div className="my-6 rounded border border-[var(--border)] bg-[var(--code-bg)] p-4 text-center text-sm text-[var(--text-secondary)]">
+    <div className="my-6 rounded-2xl glass-card p-4 text-center text-sm text-[var(--text-secondary)]">
       不支持的视频源: {src}
     </div>
   );
